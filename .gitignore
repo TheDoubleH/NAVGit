@@ -1,0 +1,9 @@
+# Pester
+module/Tests/TestResults.xml
+
+# VS Code extension build output
+vscode/node_modules/
+vscode/out/
+vscode/dist/
+vscode/resources/NavGit/
+*.vsix
