@@ -54,6 +54,18 @@ InModuleScope NavGit {
             (Read-NavObjectHeader -Path $file -Encoding $cp850).Name | Should -Be $name
         }
 
+        It 'reads the bracketed declaration used for names with trailing spaces' {
+            $file = New-TestObjectFile -Folder (New-TestFolder) -Id 50376
+            $lines = [System.IO.File]::ReadAllLines($file)
+            $lines[0] = 'OBJECT [Table 50376 Required Sales Doc. Document ]'
+            [System.IO.File]::WriteAllLines($file, $lines)
+
+            $header = Read-NavObjectHeader -Path $file
+            $header.Type | Should -Be 'Table'
+            $header.Id | Should -Be 50376
+            $header.Name | Should -Be 'Required Sales Doc. Document '
+        }
+
         It 'rejects files that are not C/AL objects' {
             $file = Join-Path (New-TestFolder) 'TAB1.TXT'
             Set-Content -LiteralPath $file -Value 'hello'
@@ -359,7 +371,7 @@ InModuleScope NavGit {
             Join-Path $config.objectsPath 'TAB77.TXT' | Should -Not -Exist
             $result.Moved | Should -Be @('TAB50100.TXT')
             $result.Removed | Should -Be @('TAB77.TXT')
-            Should -Invoke Export-NavContainerObjects -Times 1 -Exactly -ParameterFilter { $filter -eq 'Id=1..1999999999' -and $exportTo -eq 'txt folder' }
+            Should -Invoke Export-NavContainerObjects -Times 1 -Exactly -ParameterFilter { $filter -eq '' -and $exportTo -eq 'txt folder' }
             $staging | Should -Not -Exist
         }
 

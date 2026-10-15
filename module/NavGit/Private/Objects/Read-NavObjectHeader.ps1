@@ -30,7 +30,15 @@ function Read-NavObjectHeader {
     $reader = New-Object System.IO.StreamReader($Path, $Encoding, $true)
     try {
         $first = $reader.ReadLine()
-        if ($first -notmatch '^OBJECT\s+(?<type>[A-Za-z]+)\s+(?<id>\d+)\s+(?<name>.*?)\s*$') {
+        # Names with leading/trailing spaces are written in brackets: OBJECT [Table 50376 Required Sales Doc. Document ]
+        $declaration = $null
+        if ($first -match '^OBJECT\s+\[(?<inner>.*)\]\s*$') {
+            $declaration = $Matches.inner
+        }
+        elseif ($first -match '^OBJECT\s+(?<inner>.*?)\s*$') {
+            $declaration = $Matches.inner
+        }
+        if ($null -eq $declaration -or $declaration -notmatch '^(?<type>[A-Za-z]+)\s+(?<id>\d+)\s(?<name>.*)$') {
             throw "'$Path' is not a C/AL object file (first line: '$first')."
         }
         $header.Type = Get-NavGitObjectTypeName -Name $Matches.type

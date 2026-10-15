@@ -51,8 +51,8 @@ function Invoke-NavGitCommand {
         if ($ProfileId -and $command.Parameters.ContainsKey('ProfileId')) { $params.ProfileId = $ProfileId }
 
         if ($AsJson) {
-            # Progress (Write-Host = information stream) would end up in stdout; drop it.
-            $result = & $definition.Function @params 6>$null
+            # Progress (Write-Host = information stream) and warnings would end up in stdout; drop them.
+            $result = & $definition.Function @params 3>$null 6>$null
         }
         else {
             Write-NavGitLog "NavGit: $($definition.Description) ($Repository)" -Level Step

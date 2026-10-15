@@ -75,6 +75,11 @@ InModuleScope NavGit {
             $Entry.RequiresContainerHelper | Should -BeOfType [bool]
         }
 
+        It 'entry <Name> points to an exported function' -ForEach (@(Get-NavGitCommandDefinition) | ForEach-Object { @{ Name = $_.Name; Function = $_.Function } }) {
+            Get-Command -Name $Function -Module NavGit -CommandType Function | Should -Not -BeNullOrEmpty
+            (Get-Module NavGit).ExportedFunctions.Keys | Should -Contain $Function
+        }
+
         It 'does not require elevation for client commands' {
             ($commands | Where-Object Name -in 'StartDevEnv', 'StartClient', 'GetProfiles').RequiresElevation | Should -Not -Contain $true
         }

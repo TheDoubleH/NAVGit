@@ -33,7 +33,7 @@ function Get-NavGitDefaultConfig {
         paths                = @{ objects = 'Objects'; tests = 'Tests'; addIns = 'Add-Ins' }
         testObjects          = @{ versionListPattern = '(^|,)\s*Test'; includeTestCodeunits = $true }
         import               = @{ deleteMissing = 'warn'; syncSchema = 'Force'; compileFilter = 'Compiled=0'; dateFormat = '' }
-        export               = @{ filter = 'Id=1..1999999999'; format = 'txt folder' }
+        export               = @{ filter = ''; format = 'txt folder' }
         client               = @{ defaultProfile = '' }
     }
 }

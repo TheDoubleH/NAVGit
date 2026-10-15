@@ -191,7 +191,7 @@ function Assert-NavGitConfig {
         Test-String 'import.dateFormat' $Config.import.dateFormat
     }
     if (Test-Object 'export' $Config.export) {
-        Test-String 'export.filter' $Config.export.filter -Required
+        Test-String 'export.filter' $Config.export.filter
         Test-Enum 'export.format' $Config.export.format @('txt folder')
     }
     if (Test-Object 'client' $Config.client) {

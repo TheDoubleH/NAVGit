@@ -46,7 +46,8 @@ function Invoke-NavGitContainerSql {
 function Get-NavGitDbObjects {
     <#
     .SYNOPSIS
-        Application objects in the container database (no TableData, no system objects >= 2000000000).
+        Objects in the container database (no TableData). System objects (>= 2000000000) are included so exported
+        system tables in the repository compare as unchanged; Compare-NavGitObjects never reports them as missing.
         Returns [pscustomobject]@{ Type; TypeId; Id; Name; Modified; VersionList; Date; Time; Compiled }.
     #>
     [CmdletBinding()]
@@ -59,7 +60,7 @@ function Get-NavGitDbObjects {
 SELECT [Type], [ID], [Name], [Modified], [Version List] AS VersionList,
        CONVERT(varchar(19), [Date], 120) AS DateText, CONVERT(varchar(19), [Time], 120) AS TimeText, [Compiled]
 FROM [dbo].[Object]
-WHERE [Type] > 0 AND [ID] < 2000000000 AND [Company Name] = ''
+WHERE [Type] > 0 AND [Company Name] = ''
 '@
     $rows = Invoke-NavGitContainerSql -ContainerName $ContainerName -Query $query
     return @(foreach ($row in $rows) {
@@ -107,5 +108,5 @@ function Get-NavGitUncompiledObjects {
         [string] $ContainerName
     )
 
-    return @(Get-NavGitDbObjects -ContainerName $ContainerName | Where-Object { -not $_.Compiled })
+    return @(Get-NavGitDbObjects -ContainerName $ContainerName | Where-Object { -not $_.Compiled -and $_.Id -lt 2000000000 })
 }

@@ -3,10 +3,10 @@ function Export-NavGitObjects {
     .SYNOPSIS
         Export NAV objects to GIT: exports objects from the container and places them in the Objects or Tests folder.
     .DESCRIPTION
-        Objects matching export.filter are exported (one file per object, e.g. TAB18.TXT). Test objects - Version List
-        matching testObjects.versionListPattern, or codeunits with Subtype=Test - go to the Tests folder, all others to
-        the Objects folder. An object that changed category is moved. With the default (full) export filter, object
-        files that no longer exist in the database are deleted.
+        All objects (or those matching export.filter) are exported, one file per object (e.g. TAB18.TXT). Test objects -
+        Version List matching testObjects.versionListPattern, or codeunits with Subtype=Test - go to the Tests folder,
+        all others to the Objects folder. An object that changed category is moved. With a full export (no
+        export.filter), object files of objects that no longer exist in the database are deleted.
     .PARAMETER Path
         Repository folder (or any folder/file inside it). Default: current location.
     #>
@@ -19,14 +19,17 @@ function Export-NavGitObjects {
     $config = $context.Config
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-    $fullExport = ($config.export.filter -eq (Get-NavGitDefaultConfig -UserSettings @{}).export.filter)
+    # Only a full export can tell which objects were deleted.
+    $fullExport = -not $config.export.filter
+    $description = 'all objects'
     if (-not $fullExport) {
-        Write-NavGitLog "export.filter '$($config.export.filter)' is not the full range; object files that were not exported are kept." -Level Warning
+        $description = $config.export.filter
+        Write-NavGitLog "export.filter '$($config.export.filter)' selects part of the objects; object files that were not exported are kept." -Level Warning
     }
 
     $staging = Get-NavGitStagingFolder -ContainerName $context.ContainerName
     try {
-        Write-NavGitLog "Exporting objects ($($config.export.filter)) from '$($context.ContainerName)'" -Level Step
+        Write-NavGitLog "Exporting $description from '$($context.ContainerName)'" -Level Step
         Export-NavContainerObjects -containerName $context.ContainerName -objectsFolder $staging -filter $config.export.filter `
             -exportTo $config.export.format -sqlCredential $context.SqlCredential
 

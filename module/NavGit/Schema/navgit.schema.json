@@ -143,7 +143,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "filter": { "type": "string", "minLength": 1, "default": "Id=1..1999999999", "description": "C/SIDE filter for objects exported to Git." },
+        "filter": { "type": "string", "default": "", "description": "C/SIDE filter for objects exported to Git, e.g. 'Type=Table;Id=50000..50099'. Empty exports all objects (as AdvaniaGIT did); only then are object files of deleted objects removed from Git." },
         "format": { "type": "string", "enum": ["txt folder"], "default": "txt folder", "description": "Export format." }
       }
     },
