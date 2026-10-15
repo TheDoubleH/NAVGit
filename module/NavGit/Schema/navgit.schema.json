@@ -134,7 +134,8 @@
       "properties": {
         "deleteMissing": { "type": "string", "enum": ["warn", "mark"], "default": "warn", "description": "Objects in the database but not in Git: warn only, or mark their Version List as #DELETE." },
         "syncSchema": { "type": "string", "enum": ["Force", "Yes", "No"], "default": "Force", "description": "SynchronizeSchemaChanges used for import and compile." },
-        "compileFilter": { "type": "string", "minLength": 1, "default": "Compiled=0", "description": "C/SIDE filter for objects compiled after import." }
+        "compileFilter": { "type": "string", "minLength": 1, "default": "Compiled=0", "description": "C/SIDE filter for objects compiled after import." },
+        "dateFormat": { "type": "string", "default": "", "description": "Format of Date in the object files, e.g. 'dd.MM.yy' or 'MM/dd/yy'. Empty: derived from the separator ('.' dd.MM.yy, '-' dd-MM-yy, '/' MM/dd/yy). Only used to detect changed objects." }
       }
     },
     "export": {

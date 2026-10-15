@@ -44,6 +44,51 @@ function New-TestUserSettings {
     return $result
 }
 
+function New-TestObjectFile {
+    <#
+        Writes a minimal C/AL object file (OEM code page) and returns its path.
+    #>
+    param(
+        [Parameter(Mandatory)] [string] $Folder,
+        [string] $Type = 'Table',
+        [int] $Id = 50000,
+        [string] $Name = 'Test Object',
+        [string] $VersionList = 'CUST1.00',
+        [string] $Date = '24.11.17',
+        [string] $Time = '12:00:00',
+        [switch] $Modified,
+        [string] $Subtype,
+        [string] $FileName,
+        [System.Text.Encoding] $Encoding = [System.Text.Encoding]::GetEncoding([System.Globalization.CultureInfo]::CurrentCulture.TextInfo.OEMCodePage)
+    )
+
+    $prefix = @{ Table = 'TAB'; Codeunit = 'COD'; Page = 'PAG'; Report = 'REP'; XMLport = 'XML'; Query = 'QUE'; MenuSuite = 'MEN' }[$Type]
+    if (-not $FileName) { $FileName = "$prefix$Id.TXT" }
+    New-Item -ItemType Directory -Path $Folder -Force | Out-Null
+
+    $lines = @("OBJECT $Type $Id $Name", '{', '  OBJECT-PROPERTIES', '  {', "    Date=$Date;", "    Time=$Time;")
+    if ($Modified) { $lines += '    Modified=Yes;' }
+    $lines += @("    Version List=$VersionList;", '  }', '  PROPERTIES', '  {')
+    if ($Subtype) { $lines += "    Subtype=$Subtype;" }
+    $lines += @('    OnRun=BEGIN', '          END;', '', '  }', '  CODE', '  {', '', '    BEGIN', '    END.', '  }', '}', '')
+
+    $path = Join-Path $Folder $FileName
+    [System.IO.File]::WriteAllText($path, ($lines -join "`r`n"), $Encoding)
+    return $path
+}
+
+function New-TestDbObject {
+    param(
+        [string] $Type = 'Table', [int] $Id = 50000, [string] $Name = 'Test Object', [string] $VersionList = 'CUST1.00',
+        [datetime] $Date = '2017-11-24', [timespan] $Time = '12:00:00', [bool] $Modified = $false, [bool] $Compiled = $true
+    )
+    $typeIds = @{ Table = 1; Report = 3; Codeunit = 5; XMLport = 6; MenuSuite = 7; Page = 8; Query = 9 }
+    [pscustomobject]@{
+        Type = $Type; TypeId = $typeIds[$Type]; Id = $Id; Name = $Name; Modified = $Modified; VersionList = $VersionList
+        Date = $Date; Time = $Time; Compiled = $Compiled
+    }
+}
+
 function New-TestCredential {
     param([string] $UserName = 'admin', [string] $Password = 'P@ssw0rd!')
     return New-Object System.Management.Automation.PSCredential($UserName, (ConvertTo-SecureString $Password -AsPlainText -Force))
@@ -58,6 +103,10 @@ function global:Remove-BcContainer { param($containerName) }
 function global:Get-BcContainerServerConfiguration { param($ContainerName) }
 function global:Get-BcContainerArtifactUrl { param($containerName) }
 function global:Get-BcContainerNavVersion { param($containerOrImageName) }
+function global:Invoke-ScriptInBcContainer { param($containerName, [scriptblock]$scriptblock, [object[]]$argumentList, $useSession, $usePwsh) }
+function global:Import-ObjectsToNavContainer { param($containerName, $objectsFile, [pscredential]$sqlCredential, $ImportAction, $SynchronizeSchemaChanges, [switch]$suppressBuildSearchIndex) }
+function global:Export-NavContainerObjects { param($containerName, $objectsFolder, $filter, [pscredential]$sqlCredential, $exportTo, [switch]$includeSystemObjects, [switch]$PreserveFormatting) }
+function global:Compile-ObjectsInNavContainer { param($containerName, $filter, [pscredential]$sqlCredential, $SynchronizeSchemaChanges, [switch]$generatesymbolreference) }
 function global:New-BcContainer {
     param(
         [switch]$accept_eula, [switch]$accept_outdated, $containerName, $artifactUrl, $imageName, $bakFile, $licenseFile,

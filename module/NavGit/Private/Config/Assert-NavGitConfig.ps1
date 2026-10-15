@@ -187,6 +187,7 @@ function Assert-NavGitConfig {
         Test-Enum 'import.deleteMissing' $Config.import.deleteMissing @('warn', 'mark')
         Test-Enum 'import.syncSchema' $Config.import.syncSchema @('Force', 'Yes', 'No')
         Test-String 'import.compileFilter' $Config.import.compileFilter -Required
+        Test-String 'import.dateFormat' $Config.import.dateFormat
     }
     if (Test-Object 'export' $Config.export) {
         Test-String 'export.filter' $Config.export.filter -Required

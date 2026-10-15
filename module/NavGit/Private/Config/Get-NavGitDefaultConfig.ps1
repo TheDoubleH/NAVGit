@@ -32,7 +32,7 @@ function Get-NavGitDefaultConfig {
         additionalParameters = @()
         paths                = @{ objects = 'Objects'; tests = 'Tests' }
         testObjects          = @{ versionListPattern = '(^|,)\s*Test'; includeTestCodeunits = $true }
-        import               = @{ deleteMissing = 'warn'; syncSchema = 'Force'; compileFilter = 'Compiled=0' }
+        import               = @{ deleteMissing = 'warn'; syncSchema = 'Force'; compileFilter = 'Compiled=0'; dateFormat = '' }
         export               = @{ filter = 'Id=1..1999999999'; format = 'txt folder' }
         client               = @{ defaultProfile = '' }
     }

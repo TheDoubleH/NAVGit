@@ -28,7 +28,7 @@ function Get-NavGitKnownConfigKeys {
         'additionalParameters' = $null
         'paths'                = @('objects', 'tests')
         'testObjects'          = @('versionListPattern', 'includeTestCodeunits')
-        'import'               = @('deleteMissing', 'syncSchema', 'compileFilter')
+        'import'               = @('deleteMissing', 'syncSchema', 'compileFilter', 'dateFormat')
         'export'               = @('filter', 'format')
         'client'               = @('defaultProfile')
     }
