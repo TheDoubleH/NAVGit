@@ -30,7 +30,7 @@ function Get-NavGitDefaultConfig {
         testToolkit          = @{ country = ''; librariesOnly = $false }
         myScripts            = @()
         additionalParameters = @()
-        paths                = @{ objects = 'Objects'; tests = 'Tests' }
+        paths                = @{ objects = 'Objects'; tests = 'Tests'; addIns = 'Add-Ins' }
         testObjects          = @{ versionListPattern = '(^|,)\s*Test'; includeTestCodeunits = $true }
         import               = @{ deleteMissing = 'warn'; syncSchema = 'Force'; compileFilter = 'Compiled=0'; dateFormat = '' }
         export               = @{ filter = 'Id=1..1999999999'; format = 'txt folder' }

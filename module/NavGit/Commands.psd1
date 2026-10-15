@@ -51,6 +51,13 @@
             RequiresContainerHelper = $true
         }
         @{
+            Name                    = 'UpdateAddIns'
+            Function                = 'Update-NavGitAddIns'
+            Description             = 'Update Add-ins'
+            RequiresElevation       = $true
+            RequiresContainerHelper = $true
+        }
+        @{
             Name                    = 'StartDevEnv'
             Function                = 'Start-NavGitDevelopmentEnvironment'
             Description             = 'Start Development Environment (FinSql)'

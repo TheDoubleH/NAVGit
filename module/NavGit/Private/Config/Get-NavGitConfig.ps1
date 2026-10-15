@@ -46,6 +46,10 @@ function Get-NavGitConfig {
     $config.configPath = $configPath
     $config.objectsPath = Join-Path $repositoryPath $config.paths.objects
     $config.testsPath = Join-Path $repositoryPath $config.paths.tests
+    $config.addInsPath = $null
+    if ($config.paths.addIns) {
+        $config.addInsPath = Join-Path $repositoryPath $config.paths.addIns
+    }
     $config.userSettings = $UserSettings
 
     return $config

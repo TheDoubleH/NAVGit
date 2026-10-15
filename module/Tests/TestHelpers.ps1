@@ -106,6 +106,8 @@ function global:Get-BcContainerNavVersion { param($containerOrImageName) }
 function global:Invoke-ScriptInBcContainer { param($containerName, [scriptblock]$scriptblock, [object[]]$argumentList, $useSession, $usePwsh) }
 function global:Import-ObjectsToNavContainer { param($containerName, $objectsFile, [pscredential]$sqlCredential, $ImportAction, $SynchronizeSchemaChanges, [switch]$suppressBuildSearchIndex) }
 function global:Export-NavContainerObjects { param($containerName, $objectsFolder, $filter, [pscredential]$sqlCredential, $exportTo, [switch]$includeSystemObjects, [switch]$PreserveFormatting) }
+function global:Get-BcContainerPath { param($containerName, $path, [switch]$throw) }
+function global:Import-TestToolkitToBcContainer { param($containerName, [pscredential]$sqlCredential, [pscredential]$credential, [switch]$includeTestLibrariesOnly, $testToolkitCountry, [switch]$doNotUpdateSymbols) }
 function global:Compile-ObjectsInNavContainer { param($containerName, $filter, [pscredential]$sqlCredential, $SynchronizeSchemaChanges, [switch]$generatesymbolreference) }
 function global:New-BcContainer {
     param(

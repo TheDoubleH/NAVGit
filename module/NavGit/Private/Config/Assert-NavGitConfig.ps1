@@ -164,7 +164,8 @@ function Assert-NavGitConfig {
     if (Test-Object 'paths' $Config.paths) {
         Test-String 'paths.objects' $Config.paths.objects -Required
         Test-String 'paths.tests' $Config.paths.tests -Required
-        foreach ($name in @('objects', 'tests')) {
+        Test-String 'paths.addIns' $Config.paths.addIns
+        foreach ($name in @('objects', 'tests', 'addIns')) {
             $value = $Config.paths[$name]
             if ($value -is [string] -and $value -and [System.IO.Path]::IsPathRooted($value)) {
                 $errors.Add("'paths.$name' must be relative to the repository (was '$value').")

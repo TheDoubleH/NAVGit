@@ -57,6 +57,9 @@ function New-NavGitContainer {
     if (-not $state.clientFolder) {
         Write-NavGitLog "The Windows client was not found on the host; Start Client and Start FinSql will not work for '$($config.containerName)'." -Level Warning
     }
+    if ($plan.AddInsFolder) {
+        Sync-NavGitAddIns -ContainerName $config.containerName -AddInsFolder $plan.AddInsFolder -ClientFolder $state.clientFolder
+    }
 
     Write-NavGitLog ("Container '{0}' is ready ({1:mm\:ss})" -f $config.containerName, $stopwatch.Elapsed) -Level Success
 }

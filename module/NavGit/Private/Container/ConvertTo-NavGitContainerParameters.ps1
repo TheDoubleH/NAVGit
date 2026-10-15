@@ -25,6 +25,9 @@ function ConvertTo-NavGitContainerParameters {
         [Parameter(Mandatory)]
         [pscredential] $Credential,
 
+        # Existing host folder with .NET add-ins; mapped to c:\run\Add-ins (as AdvaniaGIT's mapAddInFolder did).
+        [string] $AddInsFolder,
+
         [string] $UserDomain = $env:USERDOMAIN
     )
 
@@ -41,6 +44,9 @@ function ConvertTo-NavGitContainerParameters {
 
     $additionalParameters = @($Config.additionalParameters | Where-Object { $_ })
     Assert-NavGitAdditionalParameters -AdditionalParameters $additionalParameters
+    if ($AddInsFolder) {
+        $additionalParameters += "--volume `"$($AddInsFolder):c:\run\Add-ins`""
+    }
 
     $params = [ordered]@{
         accept_eula              = $true

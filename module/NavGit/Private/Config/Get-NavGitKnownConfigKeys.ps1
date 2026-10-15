@@ -26,7 +26,7 @@ function Get-NavGitKnownConfigKeys {
         'testToolkit'          = @('country', 'librariesOnly')
         'myScripts'            = $null
         'additionalParameters' = $null
-        'paths'                = @('objects', 'tests')
+        'paths'                = @('objects', 'tests', 'addIns')
         'testObjects'          = @('versionListPattern', 'includeTestCodeunits')
         'import'               = @('deleteMissing', 'syncSchema', 'compileFilter', 'dateFormat')
         'export'               = @('filter', 'format')

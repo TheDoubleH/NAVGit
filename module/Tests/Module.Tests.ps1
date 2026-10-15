@@ -60,7 +60,7 @@ InModuleScope NavGit {
 
         It 'contains the planned commands' {
             $commands.Name | Should -Be @('BuildContainer', 'BuildAndUpdate', 'RemoveContainer', 'ImportTestToolkit',
-                'ImportObjects', 'ExportObjects', 'StartDevEnv', 'StartClient', 'GetProfiles')
+                'ImportObjects', 'ExportObjects', 'UpdateAddIns', 'StartDevEnv', 'StartClient', 'GetProfiles')
         }
 
         It 'has unique names and functions' {

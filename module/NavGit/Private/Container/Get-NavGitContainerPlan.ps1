@@ -17,14 +17,20 @@ function Get-NavGitContainerPlan {
     $backup = Resolve-NavGitBackupFile -Config $Config -ArtifactInfo $artifact
     $licenseFile = Resolve-NavGitLicenseFile -Config $Config -ArtifactInfo $artifact
 
+    $addInsFolder = $null
+    if ($Config.addInsPath -and (Test-Path -LiteralPath $Config.addInsPath -PathType Container)) {
+        $addInsFolder = (Resolve-Path -LiteralPath $Config.addInsPath).ProviderPath
+    }
+
     $parameters = ConvertTo-NavGitContainerParameters -Config $Config -ArtifactInfo $artifact -Backup $backup `
-        -LicenseFile $licenseFile -Credential $Credential
+        -LicenseFile $licenseFile -Credential $Credential -AddInsFolder $addInsFolder
 
     return [pscustomobject]@{
-        Artifact    = $artifact
-        Backup      = $backup
-        LicenseFile = $licenseFile
-        Parameters  = $parameters
+        Artifact     = $artifact
+        Backup       = $backup
+        LicenseFile  = $licenseFile
+        AddInsFolder = $addInsFolder
+        Parameters   = $parameters
     }
 }
 
@@ -44,6 +50,9 @@ function Write-NavGitContainerPlan {
     }
     if ($Plan.LicenseFile) {
         Write-NavGitLog "License   : $($Plan.LicenseFile)"
+    }
+    if ($Plan.AddInsFolder) {
+        Write-NavGitLog "Add-ins   : $($Plan.AddInsFolder)"
     }
     $isolation = 'chosen by BcContainerHelper'
     if ($p.isolation) { $isolation = $p.isolation }

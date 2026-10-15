@@ -116,7 +116,8 @@
       "additionalProperties": false,
       "properties": {
         "objects": { "type": "string", "minLength": 1, "default": "Objects", "description": "Folder (relative to the repository) for application objects." },
-        "tests": { "type": "string", "minLength": 1, "default": "Tests", "description": "Folder (relative to the repository) for test objects." }
+        "tests": { "type": "string", "minLength": 1, "default": "Tests", "description": "Folder (relative to the repository) for test objects." },
+        "addIns": { "type": "string", "default": "Add-Ins", "description": "Folder (relative to the repository) with .NET add-ins. When it exists it is mapped to c:\\run\\Add-ins in the container and copied to the service tier and Windows client Add-ins folders. Empty disables it." }
       }
     },
     "testObjects": {
