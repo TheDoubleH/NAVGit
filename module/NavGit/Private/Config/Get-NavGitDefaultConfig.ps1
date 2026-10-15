@@ -57,3 +57,24 @@ function Get-NavGitDefaultAuth {
     }
     return 'Windows'
 }
+
+function Get-NavGitEffectiveAuth {
+    <#
+    .SYNOPSIS
+        Windows authentication cannot be used with Azure AD accounts in a container; falls back to NavUserPassword with a warning.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Auth,
+
+        [string] $UserDomain = $env:USERDOMAIN
+    )
+
+    if ($Auth -eq 'Windows' -and $UserDomain -eq 'AzureAD') {
+        Write-NavGitLog "Windows authentication does not work with Azure AD accounts in a container; using NavUserPassword. Set 'auth' to NavUserPassword in navgit.json to silence this warning." -Level Warning
+        return 'NavUserPassword'
+    }
+    return $Auth
+}

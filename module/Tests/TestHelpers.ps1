@@ -44,6 +44,25 @@ function New-TestUserSettings {
     return $result
 }
 
+function New-TestCredential {
+    param([string] $UserName = 'admin', [string] $Password = 'P@ssw0rd!')
+    return New-Object System.Management.Automation.PSCredential($UserName, (ConvertTo-SecureString $Password -AsPlainText -Force))
+}
+
 # Stubs so BcContainerHelper does not have to be imported (or exist) to mock its commands.
+# Parameter names must match BcContainerHelper so ParameterFilter and splatting work.
 function global:Get-BcArtifactUrl { param($type, $country, $version, $select, $storageAccount, $sasToken, $after, $before, [switch]$accept_insiderEula, [switch]$doNotCheckPlatform) }
 function global:Get-NavArtifactUrl { param($nav, $cu, $country, $select) }
+function global:Test-BcContainer { param($containerName, [switch]$doNotIncludeStoppedContainers) }
+function global:Remove-BcContainer { param($containerName) }
+function global:Get-BcContainerServerConfiguration { param($ContainerName) }
+function global:Get-BcContainerArtifactUrl { param($containerName) }
+function global:Get-BcContainerNavVersion { param($containerOrImageName) }
+function global:New-BcContainer {
+    param(
+        [switch]$accept_eula, [switch]$accept_outdated, $containerName, $artifactUrl, $imageName, $bakFile, $licenseFile,
+        [pscredential]$Credential, $auth, $isolation, $memoryLimit, $dns, [switch]$includeCSide, [switch]$doNotExportObjectsToText,
+        [switch]$enableSymbolLoading, [switch]$includeTestToolkit, [switch]$includeTestLibrariesOnly, [switch]$updateHosts,
+        $shortcuts, $restart, $myScripts, [string[]]$additionalParameters
+    )
+}
