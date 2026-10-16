@@ -7,7 +7,7 @@ import { createConfigCommandId, navGitCommands, sortProfiles } from '../src/comm
 // Compiled to out-test/test, so the project root is two levels up.
 const root = path.resolve(__dirname, '..', '..');
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-const commandsPsd1 = fs.readFileSync(path.resolve(root, '..', 'module', 'NavGit', 'Commands.psd1'), 'utf8');
+const commandsPsd1 = fs.readFileSync(path.resolve(root, '..', 'module', 'NAVGit', 'Commands.psd1'), 'utf8');
 
 test('package.json contributes exactly the registry commands plus Create navgit.json', () => {
     const contributed = packageJson.contributes.commands.map((command: { command: string }) => command.command).sort();
@@ -19,7 +19,7 @@ test('titles in package.json match the registry', () => {
     for (const command of navGitCommands) {
         const contributed = packageJson.contributes.commands.find((entry: { command: string }) => entry.command === command.id);
         assert.strictEqual(contributed.title, command.title, command.id);
-        assert.strictEqual(contributed.category, 'NavGit', command.id);
+        assert.strictEqual(contributed.category, 'NAVGit', command.id);
     }
 });
 
@@ -41,13 +41,19 @@ test('the planned commands are present', () => {
         'Start Development Environment (FinSql)',
         'Start NAV Client (default)',
         'Start NAV Client...',
+        'Compile Uncompiled Objects',
+        'Compile Modified Objects',
+        'Compile All Objects',
     ]) {
         assert.ok(titles.includes(title), title);
     }
 });
 
-test('only Remove Container asks for confirmation and only Start NAV Client... picks a profile', () => {
-    assert.deepStrictEqual(navGitCommands.filter((command) => command.confirm).map((command) => command.id), ['navgit.removeContainer']);
+test('only Remove Container and Compile All Objects ask for confirmation; only Start NAV Client... picks a profile', () => {
+    assert.deepStrictEqual(
+        navGitCommands.filter((command) => command.confirm).map((command) => command.id),
+        ['navgit.removeContainer', 'navgit.compileAll'],
+    );
     assert.deepStrictEqual(navGitCommands.filter((command) => command.pickProfile).map((command) => command.id), ['navgit.startClient']);
 });
 

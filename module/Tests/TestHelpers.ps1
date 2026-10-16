@@ -1,4 +1,4 @@
-# Shared helpers for NavGit tests. Dot-source from BeforeAll.
+# Shared helpers for NAVGit tests. Dot-source from BeforeAll.
 
 function New-TestRepository {
     <#

@@ -1,14 +1,14 @@
-// Copies the NavGit PowerShell module (../module/NavGit) and the license into the extension, so the packaged
+// Copies the NAVGit PowerShell module (../module/NAVGit) and the license into the extension, so the packaged
 // extension carries the module and the navgit.json schema.
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const source = path.resolve(root, '..', 'module', 'NavGit');
-const target = path.join(root, 'resources', 'NavGit');
+const source = path.resolve(root, '..', 'module', 'NAVGit');
+const target = path.join(root, 'resources', 'NAVGit');
 
-if (!fs.existsSync(path.join(source, 'NavGit.psd1'))) {
-    console.error(`NavGit module not found at ${source}`);
+if (!fs.existsSync(path.join(source, 'NAVGit.psd1'))) {
+    console.error(`NAVGit module not found at ${source}`);
     process.exit(1);
 }
 

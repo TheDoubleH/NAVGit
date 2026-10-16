@@ -1,11 +1,11 @@
 BeforeDiscovery {
-    Import-Module (Join-Path $PSScriptRoot '..\NavGit\NavGit.psd1') -Force
+    Import-Module (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -Force
 }
 
-InModuleScope NavGit {
+InModuleScope NAVGit {
     BeforeAll {
         . (Join-Path $PSScriptRoot 'TestHelpers.ps1')
-        $defaultTestObjects = (Get-NavGitDefaultConfig -UserSettings @{}).testObjects
+        $defaultTestObjects = (Get-NAVGitDefaultConfig -UserSettings @{}).testObjects
 
         function New-TestFolder([string] $Prefix = 'f') {
             $path = Join-Path $TestDrive ("$Prefix-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -80,18 +80,18 @@ InModuleScope NavGit {
             @{ Text = '11/24/17'; Expected = '2017-11-24' }
             @{ Text = '24-11-17'; Expected = '2017-11-24' }
         ) {
-            $result = ConvertTo-NavGitObjectDate -Text $Text
+            $result = ConvertTo-NAVGitObjectDate -Text $Text
             $result.Valid | Should -BeTrue
             $result.Value | Should -Be ([datetime]$Expected)
         }
 
         It 'uses an explicit date format' {
-            (ConvertTo-NavGitObjectDate -Text '24/11/17' -Format 'dd/MM/yy').Value | Should -Be ([datetime]'2017-11-24')
-            (ConvertTo-NavGitObjectDate -Text '24/11/17').Valid | Should -BeFalse
+            (ConvertTo-NAVGitObjectDate -Text '24/11/17' -Format 'dd/MM/yy').Value | Should -Be ([datetime]'2017-11-24')
+            (ConvertTo-NAVGitObjectDate -Text '24/11/17').Valid | Should -BeFalse
         }
 
         It 'treats a blank date as valid and empty' {
-            $result = ConvertTo-NavGitObjectDate -Text ''
+            $result = ConvertTo-NAVGitObjectDate -Text ''
             $result.Valid | Should -BeTrue
             $result.Value | Should -BeNullOrEmpty
         }
@@ -102,19 +102,19 @@ InModuleScope NavGit {
             @{ Text = '1:30:00 PM'; Expected = '13:30:00' }
             @{ Text = '12:00:00.567'; Expected = '12:00:00' }
         ) {
-            $result = ConvertTo-NavGitObjectTime -Text $Text
+            $result = ConvertTo-NAVGitObjectTime -Text $Text
             $result.Valid | Should -BeTrue
             $result.Value | Should -Be ([timespan]$Expected)
         }
 
         It 'converts SQL values and treats 1753 as blank' {
-            ConvertFrom-NavGitSqlDateTime -Text '2017-11-24 00:00:00' -Part Date | Should -Be ([datetime]'2017-11-24')
-            ConvertFrom-NavGitSqlDateTime -Text '1754-01-01 13:30:15' -Part Time | Should -Be ([timespan]'13:30:15')
-            ConvertFrom-NavGitSqlDateTime -Text '1753-01-01 00:00:00' -Part Date | Should -BeNullOrEmpty
+            ConvertFrom-NAVGitSqlDateTime -Text '2017-11-24 00:00:00' -Part Date | Should -Be ([datetime]'2017-11-24')
+            ConvertFrom-NAVGitSqlDateTime -Text '1754-01-01 13:30:15' -Part Time | Should -Be ([timespan]'13:30:15')
+            ConvertFrom-NAVGitSqlDateTime -Text '1753-01-01 00:00:00' -Part Date | Should -BeNullOrEmpty
         }
     }
 
-    Describe 'Get-NavGitObjectTargetFolder' {
+    Describe 'Get-NAVGitObjectTargetFolder' {
         It 'puts Version List <VersionList> in <Expected>' -ForEach @(
             @{ VersionList = 'Test'; Expected = 'Tests' }
             @{ VersionList = 'TEST1.0'; Expected = 'Tests' }
@@ -126,22 +126,22 @@ InModuleScope NavGit {
             @{ VersionList = ''; Expected = 'Objects' }
         ) {
             $header = [pscustomobject]@{ Type = 'Table'; VersionList = $VersionList; Subtype = '' }
-            Get-NavGitObjectTargetFolder -Header $header -TestObjects $defaultTestObjects | Should -Be $Expected
+            Get-NAVGitObjectTargetFolder -Header $header -TestObjects $defaultTestObjects | Should -Be $Expected
         }
 
         It 'puts codeunits with Subtype=Test in Tests unless includeTestCodeunits is off' {
             $header = [pscustomobject]@{ Type = 'Codeunit'; VersionList = 'CUST1.00'; Subtype = 'Test' }
-            Get-NavGitObjectTargetFolder -Header $header -TestObjects $defaultTestObjects | Should -Be 'Tests'
-            Get-NavGitObjectTargetFolder -Header $header -TestObjects @{ versionListPattern = 'Test'; includeTestCodeunits = $false } | Should -Be 'Objects'
+            Get-NAVGitObjectTargetFolder -Header $header -TestObjects $defaultTestObjects | Should -Be 'Tests'
+            Get-NAVGitObjectTargetFolder -Header $header -TestObjects @{ versionListPattern = 'Test'; includeTestCodeunits = $false } | Should -Be 'Objects'
         }
 
         It 'uses a custom pattern' {
             $header = [pscustomobject]@{ Type = 'Table'; VersionList = 'NAVW1,MyTest'; Subtype = '' }
-            Get-NavGitObjectTargetFolder -Header $header -TestObjects @{ versionListPattern = 'Test'; includeTestCodeunits = $true } | Should -Be 'Tests'
+            Get-NAVGitObjectTargetFolder -Header $header -TestObjects @{ versionListPattern = 'Test'; includeTestCodeunits = $true } | Should -Be 'Tests'
         }
     }
 
-    Describe 'Compare-NavGitObjects' {
+    Describe 'Compare-NAVGitObjects' {
         BeforeAll {
             $folder = New-TestFolder 'cmp'
             $unchanged = Read-NavObjectHeader (New-TestObjectFile -Folder $folder -Id 50000)
@@ -164,7 +164,7 @@ InModuleScope NavGit {
         }
 
         It 'imports new and changed objects and skips unchanged ones' {
-            $result = Compare-NavGitObjects -RepoObjects $repo -DbObjects $db
+            $result = Compare-NAVGitObjects -RepoObjects $repo -DbObjects $db
 
             @($result.Unchanged.Id) | Should -Be @(50000)
             @($result.ToImport.Id | Sort-Object) | Should -Be @(50001, 50002, 50003, 50004, 50005)
@@ -172,55 +172,55 @@ InModuleScope NavGit {
         }
 
         It 'reports objects that are only in the database, per type' {
-            $result = Compare-NavGitObjects -RepoObjects $repo -DbObjects $db
+            $result = Compare-NAVGitObjects -RepoObjects $repo -DbObjects $db
             @($result.Missing | ForEach-Object { "$($_.Type) $($_.Id)" } | Sort-Object) | Should -Be @('Codeunit 50000', 'Table 60000')
         }
 
         It 'imports everything with -Force' {
-            (Compare-NavGitObjects -RepoObjects $repo -DbObjects $db -Force).ToImport.Count | Should -Be 6
+            (Compare-NAVGitObjects -RepoObjects $repo -DbObjects $db -Force).ToImport.Count | Should -Be 6
         }
 
         It 'handles an empty database' {
-            $result = Compare-NavGitObjects -RepoObjects $repo -DbObjects @()
+            $result = Compare-NAVGitObjects -RepoObjects $repo -DbObjects @()
             $result.ToImport.Count | Should -Be 6
             $result.Missing.Count | Should -Be 0
         }
     }
 
-    Describe 'Get-NavGitRepoObjects' {
+    Describe 'Get-NAVGitRepoObjects' {
         It 'reads Objects and Tests and ignores other files' {
             $repo = New-TestRepository
-            $config = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)
+            $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)
             $null = New-TestObjectFile -Folder $config.objectsPath -Id 18
             $null = New-TestObjectFile -Folder $config.testsPath -Type Codeunit -Id 50100
             Set-Content -LiteralPath (Join-Path $config.objectsPath 'README.md') -Value 'x'
 
-            @(Get-NavGitRepoObjects -Config $config | ForEach-Object { "$($_.Type) $($_.Id)" } | Sort-Object) | Should -Be @('Codeunit 50100', 'Table 18')
+            @(Get-NAVGitRepoObjects -Config $config | ForEach-Object { "$($_.Type) $($_.Id)" } | Sort-Object) | Should -Be @('Codeunit 50100', 'Table 18')
         }
 
         It 'throws when an object exists in both folders' {
             $repo = New-TestRepository
-            $config = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)
+            $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)
             $null = New-TestObjectFile -Folder $config.objectsPath -Id 18
             $null = New-TestObjectFile -Folder $config.testsPath -Id 18
-            { Get-NavGitRepoObjects -Config $config } | Should -Throw '*Table 18 exists twice*'
+            { Get-NAVGitRepoObjects -Config $config } | Should -Throw '*Table 18 exists twice*'
         }
     }
 
-    Describe 'Join-NavGitObjectFiles' {
+    Describe 'Join-NAVGitObjectFiles' {
         It 'concatenates bytes and adds a line break when a file does not end with one' {
             $folder = New-TestFolder 'join'
             [System.IO.File]::WriteAllBytes((Join-Path $folder 'a.txt'), [byte[]](65, 13, 10))
             [System.IO.File]::WriteAllBytes((Join-Path $folder 'b.txt'), [byte[]](0xE6, 66))
             [System.IO.File]::WriteAllBytes((Join-Path $folder 'c.txt'), [byte[]](67))
 
-            Join-NavGitObjectFiles -Path @((Join-Path $folder 'a.txt'), (Join-Path $folder 'b.txt'), (Join-Path $folder 'c.txt')) -Destination (Join-Path $folder 'all.txt')
+            Join-NAVGitObjectFiles -Path @((Join-Path $folder 'a.txt'), (Join-Path $folder 'b.txt'), (Join-Path $folder 'c.txt')) -Destination (Join-Path $folder 'all.txt')
 
             [System.IO.File]::ReadAllBytes((Join-Path $folder 'all.txt')) | Should -Be ([byte[]](65, 13, 10, 0xE6, 66, 13, 10, 67, 13, 10))
         }
     }
 
-    Describe 'Sync-NavGitObjectFolder' {
+    Describe 'Sync-NAVGitObjectFolder' {
         BeforeEach {
             $source = New-TestFolder 'export'
             $objects = New-TestFolder 'Objects'
@@ -232,7 +232,7 @@ InModuleScope NavGit {
             $null = New-TestObjectFile -Folder $source -Id 50100 -VersionList 'Test'
             $null = New-TestObjectFile -Folder $source -Type Codeunit -Id 50101 -Subtype Test
 
-            $result = Sync-NavGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing
+            $result = Sync-NAVGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing
 
             Join-Path $objects 'TAB18.TXT' | Should -Exist
             Join-Path $tests 'TAB50100.TXT' | Should -Exist
@@ -245,7 +245,7 @@ InModuleScope NavGit {
             $null = New-TestObjectFile -Folder $objects -Id 50100 -VersionList 'CUST1.00'
             $null = New-TestObjectFile -Folder $source -Id 50100 -VersionList 'CUST1.00,Test'
 
-            $result = Sync-NavGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing
+            $result = Sync-NAVGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing
 
             Join-Path $objects 'TAB50100.TXT' | Should -Not -Exist
             Join-Path $tests 'TAB50100.TXT' | Should -Exist
@@ -258,7 +258,7 @@ InModuleScope NavGit {
             $null = New-TestObjectFile -Folder $source -Id 18
             $null = New-TestObjectFile -Folder $source -Id 27 -VersionList 'NEW'
 
-            $result = Sync-NavGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing
+            $result = Sync-NAVGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing
 
             $result.Unchanged | Should -Be @('TAB18.TXT')
             $result.Changed | Should -Be @('TAB27.TXT')
@@ -271,7 +271,7 @@ InModuleScope NavGit {
             Set-Content -LiteralPath (Join-Path $objects 'README.md') -Value 'keep'
             $null = New-TestObjectFile -Folder $source -Id 18
 
-            $result = Sync-NavGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing
+            $result = Sync-NAVGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing
 
             @($result.Removed | Sort-Object) | Should -Be @('TAB98.TXT', 'TAB99.TXT')
             Join-Path $objects 'README.md' | Should -Exist
@@ -281,37 +281,38 @@ InModuleScope NavGit {
             $null = New-TestObjectFile -Folder $objects -Id 99
             $null = New-TestObjectFile -Folder $source -Id 18
 
-            $result = Sync-NavGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects
+            $result = Sync-NAVGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects
 
             $result.Removed.Count | Should -Be 0
             Join-Path $objects 'TAB99.TXT' | Should -Exist
         }
     }
 
-    Describe 'Import-NavGitObjects' {
+    Describe 'Import-NAVGitObjects' {
         BeforeEach {
             $repo = New-TestRepository
-            $config = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)
+            $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)
             $null = New-TestObjectFile -Folder $config.objectsPath -Id 18
             $null = New-TestObjectFile -Folder $config.objectsPath -Id 27 -VersionList 'CUST1.01'
             $null = New-TestObjectFile -Folder $config.testsPath -Type Codeunit -Id 50100 -VersionList 'Test'
             $staging = New-TestFolder 'staging'
             $script:importedFile = $null
 
-            Mock Initialize-NavGitContainerCommand {
+            Mock Initialize-NAVGitContainerCommand {
                 [pscustomobject]@{ Config = $config; ContainerName = 'cust'; Credential = New-TestCredential; SqlCredential = New-TestCredential 'sa' }
             }
-            Mock Get-NavGitDbObjects { @((New-TestDbObject -Id 18), (New-TestDbObject -Id 27), (New-TestDbObject -Id 99 -Name 'Old')) }
-            Mock Get-NavGitStagingFolder { $staging }
+            Mock Get-NAVGitDbObjects { @((New-TestDbObject -Id 18), (New-TestDbObject -Id 27), (New-TestDbObject -Id 99 -Name 'Old')) }
+            Mock Get-NAVGitStagingFolder { $staging }
             Mock Import-ObjectsToNavContainer { $script:importedFile = [System.IO.File]::ReadAllText($objectsFile) }
-            Mock Invoke-NavGitCompile { @() }
-            Mock Invoke-NavGitForceSync { }
-            Mock Set-NavGitObjectsDeleted { }
+            Mock Invoke-NAVGitContainerCompile { @() }
+            Mock Invoke-NAVGitForceSync { }
+            Mock Set-NAVGitObjectsDeleted { }
             Mock Write-Host { }
         }
 
-        It 'imports only changed and new objects, including the Tests folder, then compiles and syncs' {
-            $result = Import-NavGitObjects -Path $repo -WarningAction SilentlyContinue
+        It 'imports only changed and new objects, including the Tests folder with includeTestToolkit, then compiles and syncs' {
+            $config.includeTestToolkit = $true
+            $result = Import-NAVGitObjects -Path $repo -WarningAction SilentlyContinue
 
             $result.Imported | Should -Be 2
             $result.Unchanged | Should -Be 1
@@ -320,41 +321,82 @@ InModuleScope NavGit {
             $script:importedFile | Should -Match 'OBJECT Codeunit 50100'
             $script:importedFile | Should -Not -Match 'OBJECT Table 18 '
             Should -Invoke Import-ObjectsToNavContainer -Times 1 -Exactly -ParameterFilter { $containerName -eq 'cust' -and $SynchronizeSchemaChanges -eq 'Force' -and $sqlCredential.UserName -eq 'sa' }
-            Should -Invoke Invoke-NavGitCompile -Times 1 -Exactly
-            Should -Invoke Invoke-NavGitForceSync -Times 1 -Exactly
-            Should -Invoke Set-NavGitObjectsDeleted -Times 0 -Exactly
+            Should -Invoke Invoke-NAVGitContainerCompile -Times 1 -Exactly
+            Should -Invoke Invoke-NAVGitForceSync -Times 1 -Exactly
+            Should -Invoke Set-NAVGitObjectsDeleted -Times 0 -Exactly
             $staging | Should -Not -Exist
+        }
+
+        It 'does not import test objects when includeTestToolkit is off' {
+            $result = Import-NAVGitObjects -Path $repo -WarningVariable warnings -WarningAction SilentlyContinue
+
+            $result.Imported | Should -Be 1
+            $result.SkippedTests | Should -Be 1
+            $script:importedFile | Should -Match 'OBJECT Table 27'
+            $script:importedFile | Should -Not -Match 'OBJECT Codeunit 50100'
+            ($warnings -join ' ') | Should -Match '1 changed test object\(s\) in Tests are not imported because includeTestToolkit is off'
+        }
+
+        It 'imports test objects with -IncludeTests' {
+            $result = Import-NAVGitObjects -Path $repo -IncludeTests -WarningAction SilentlyContinue
+
+            $result.Imported | Should -Be 2
+            $result.SkippedTests | Should -Be 0
+            $script:importedFile | Should -Match 'OBJECT Codeunit 50100'
+        }
+
+        It 'does not import anything when only test objects changed and includeTestToolkit is off' {
+            Mock Get-NAVGitDbObjects { @((New-TestDbObject -Id 18), (New-TestDbObject -Id 27 -VersionList 'CUST1.01')) }
+
+            $result = Import-NAVGitObjects -Path $repo -WarningAction SilentlyContinue
+
+            $result.Imported | Should -Be 0
+            $result.SkippedTests | Should -Be 1
+            Should -Invoke Import-ObjectsToNavContainer -Times 0 -Exactly
+            Should -Invoke Invoke-NAVGitContainerCompile -Times 0 -Exactly
+        }
+
+        It 'never treats skipped test objects in the database as missing' {
+            $config.import.deleteMissing = 'mark'
+            # The test codeunit is in the database (older version) and changed in Git, but tests are not imported.
+            Mock Get-NAVGitDbObjects { @((New-TestDbObject -Id 18), (New-TestDbObject -Id 27 -VersionList 'CUST1.01'), (New-TestDbObject -Type Codeunit -Id 50100 -VersionList 'Test,OLD')) }
+
+            $result = Import-NAVGitObjects -Path $repo -WarningAction SilentlyContinue
+
+            $result.SkippedTests | Should -Be 1
+            $result.Missing | Should -Be 0
+            Should -Invoke Set-NAVGitObjectsDeleted -Times 0 -Exactly
         }
 
         It 'marks missing objects with deleteMissing = mark' {
             $config.import.deleteMissing = 'mark'
-            $null = Import-NavGitObjects -Path $repo -WarningAction SilentlyContinue
-            Should -Invoke Set-NavGitObjectsDeleted -Times 1 -Exactly -ParameterFilter { @($Objects).Count -eq 1 -and $Objects[0].Id -eq 99 }
+            $null = Import-NAVGitObjects -Path $repo -WarningAction SilentlyContinue
+            Should -Invoke Set-NAVGitObjectsDeleted -Times 1 -Exactly -ParameterFilter { @($Objects).Count -eq 1 -and $Objects[0].Id -eq 99 }
         }
 
         It 'does nothing in the container when everything is unchanged' {
-            Mock Get-NavGitDbObjects { @((New-TestDbObject -Id 18), (New-TestDbObject -Id 27 -VersionList 'CUST1.01'), (New-TestDbObject -Type Codeunit -Id 50100 -VersionList 'Test')) }
+            Mock Get-NAVGitDbObjects { @((New-TestDbObject -Id 18), (New-TestDbObject -Id 27 -VersionList 'CUST1.01'), (New-TestDbObject -Type Codeunit -Id 50100 -VersionList 'Test')) }
 
-            $result = Import-NavGitObjects -Path $repo
+            $result = Import-NAVGitObjects -Path $repo
 
             $result.Imported | Should -Be 0
             Should -Invoke Import-ObjectsToNavContainer -Times 0 -Exactly
-            Should -Invoke Invoke-NavGitCompile -Times 0 -Exactly
+            Should -Invoke Invoke-NAVGitContainerCompile -Times 0 -Exactly
         }
     }
 
-    Describe 'Export-NavGitObjects' {
+    Describe 'Export-NAVGitObjects' {
         BeforeEach {
             $repo = New-TestRepository
-            $config = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)
+            $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)
             $null = New-TestObjectFile -Folder $config.objectsPath -Id 50100 -VersionList 'CUST1.00'
             $null = New-TestObjectFile -Folder $config.objectsPath -Id 77
             $staging = New-TestFolder 'staging'
 
-            Mock Initialize-NavGitContainerCommand {
+            Mock Initialize-NAVGitContainerCommand {
                 [pscustomobject]@{ Config = $config; ContainerName = 'cust'; Credential = New-TestCredential; SqlCredential = $null }
             }
-            Mock Get-NavGitStagingFolder { $staging }
+            Mock Get-NAVGitStagingFolder { $staging }
             Mock Export-NavContainerObjects {
                 $null = New-TestObjectFile -Folder $objectsFolder -Id 18 -VersionList 'NAVW111.00'
                 $null = New-TestObjectFile -Folder $objectsFolder -Id 50100 -VersionList 'CUST1.00,Test'
@@ -363,7 +405,7 @@ InModuleScope NavGit {
         }
 
         It 'exports, routes test objects to Tests and removes deleted objects' {
-            $result = Export-NavGitObjects -Path $repo
+            $result = Export-NAVGitObjects -Path $repo
 
             Join-Path $config.objectsPath 'TAB18.TXT' | Should -Exist
             Join-Path $config.testsPath 'TAB50100.TXT' | Should -Exist
@@ -377,20 +419,20 @@ InModuleScope NavGit {
 
         It 'keeps files that were not exported when a partial filter is used' {
             $config.export.filter = 'Type=Table;Id=18'
-            $result = Export-NavGitObjects -Path $repo -WarningAction SilentlyContinue
+            $result = Export-NAVGitObjects -Path $repo -WarningAction SilentlyContinue
 
             $result.Removed.Count | Should -Be 0
             Join-Path $config.objectsPath 'TAB77.TXT' | Should -Exist
         }
     }
 
-    Describe 'Update-NavGitContainer' {
+    Describe 'Update-NAVGitContainer' {
         BeforeEach {
             $repo = New-TestRepository
-            Mock Assert-NavGitAdministrator { }
-            Mock Assert-NavGitBcContainerHelper { }
-            Mock New-NavGitContainer { }
-            Mock Import-NavGitObjects { }
+            Mock Assert-NAVGitAdministrator { }
+            Mock Assert-NAVGitBcContainerHelper { }
+            Mock New-NAVGitContainer { }
+            Mock Import-NAVGitObjects { }
             $env:NAVGIT_SETTINGS_PATH = Join-Path $TestDrive 'no-settings.json'
         }
         AfterAll {
@@ -399,15 +441,15 @@ InModuleScope NavGit {
 
         It 'builds the container and imports the objects' {
             Mock Test-BcContainer { $false }
-            Update-NavGitContainer -Path $repo
-            Should -Invoke New-NavGitContainer -Times 1 -Exactly -ParameterFilter { $Force }
-            Should -Invoke Import-NavGitObjects -Times 1 -Exactly
+            Update-NAVGitContainer -Path $repo
+            Should -Invoke New-NAVGitContainer -Times 1 -Exactly -ParameterFilter { $Force }
+            Should -Invoke Import-NAVGitObjects -Times 1 -Exactly
         }
 
         It 'only shows the command with -WhatIf' {
-            Update-NavGitContainer -Path $repo -WhatIf
-            Should -Invoke New-NavGitContainer -Times 1 -Exactly -ParameterFilter { $WhatIf }
-            Should -Invoke Import-NavGitObjects -Times 0 -Exactly
+            Update-NAVGitContainer -Path $repo -WhatIf
+            Should -Invoke New-NAVGitContainer -Times 1 -Exactly -ParameterFilter { $WhatIf }
+            Should -Invoke Import-NAVGitObjects -Times 0 -Exactly
         }
     }
 }

@@ -1,15 +1,15 @@
 BeforeDiscovery {
-    Import-Module (Join-Path $PSScriptRoot '..\NavGit\NavGit.psd1') -Force
+    Import-Module (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -Force
 }
 
-InModuleScope NavGit {
+InModuleScope NAVGit {
     BeforeAll {
         . (Join-Path $PSScriptRoot 'TestHelpers.ps1')
 
         function Get-TestConfig {
             param([hashtable] $Override = @{}, [hashtable] $UserSettings = (New-TestUserSettings))
             $repo = New-TestRepository -Config $Override
-            return Get-NavGitConfig -Path $repo -UserSettings $UserSettings
+            return Get-NAVGitConfig -Path $repo -UserSettings $UserSettings
         }
 
         function New-ArtifactInfo([string] $Version = '11.0.43274.0') {
@@ -17,7 +17,7 @@ InModuleScope NavGit {
                 Url        = "https://bcartifacts.azureedge.net/onprem/$Version/no"
                 Version    = [version]$Version
                 Country    = 'no'
-                NavRelease = Get-NavGitNavRelease -Version $Version
+                NavRelease = Get-NAVGitNavRelease -Version $Version
             }
         }
 
@@ -26,12 +26,12 @@ InModuleScope NavGit {
         $credential = New-TestCredential
     }
 
-    Describe 'ConvertTo-NavGitContainerParameters' {
+    Describe 'ConvertTo-NAVGitContainerParameters' {
         BeforeAll {
             function Invoke-Build {
                 param([hashtable] $Override = @{}, $Backup = $backup, [string] $Version = '11.0.43274.0', [string] $License, [string] $UserDomain = 'CONTOSO')
                 $config = Get-TestConfig $Override
-                ConvertTo-NavGitContainerParameters -Config $config -ArtifactInfo (New-ArtifactInfo $Version) -Backup $Backup `
+                ConvertTo-NAVGitContainerParameters -Config $config -ArtifactInfo (New-ArtifactInfo $Version) -Backup $Backup `
                     -LicenseFile $License -Credential $credential -UserDomain $UserDomain
             }
         }
@@ -118,7 +118,7 @@ InModuleScope NavGit {
         }
     }
 
-    Describe 'Assert-NavGitAdditionalParameters' {
+    Describe 'Assert-NAVGitAdditionalParameters' {
         It 'rejects <Parameter>' -ForEach @(
             @{ Parameter = '--env bakfile="C:\Host\Log\x\NAVBackup.bak"'; Hint = 'database.bakFile' }
             @{ Parameter = '-e licensefile=C:\x.flf'; Hint = 'licenseFile' }
@@ -130,7 +130,7 @@ InModuleScope NavGit {
             @{ Parameter = '--memory 8G'; Hint = 'memoryLimit' }
             @{ Parameter = '--isolation=process'; Hint = "'isolation'" }
         ) {
-            { Assert-NavGitAdditionalParameters -AdditionalParameters @($Parameter) } | Should -Throw "*$Hint*"
+            { Assert-NAVGitAdditionalParameters -AdditionalParameters @($Parameter) } | Should -Throw "*$Hint*"
         }
 
         It 'accepts <_>' -ForEach @(
@@ -139,23 +139,23 @@ InModuleScope NavGit {
             '--env customNavSettings=EnableTaskScheduler=false'
             '--label owner=henrik'
         ) {
-            { Assert-NavGitAdditionalParameters -AdditionalParameters @($_) } | Should -Not -Throw
+            { Assert-NAVGitAdditionalParameters -AdditionalParameters @($_) } | Should -Not -Throw
         }
 
         It 'reports every problem' {
-            $thrown = { Assert-NavGitAdditionalParameters -AdditionalParameters @('--env bakfile=x', '--dns 8.8.8.8') } | Should -Throw -PassThru
+            $thrown = { Assert-NAVGitAdditionalParameters -AdditionalParameters @('--env bakfile=x', '--dns 8.8.8.8') } | Should -Throw -PassThru
             $thrown.Exception.Message | Should -Match 'bakFile'
             $thrown.Exception.Message | Should -Match "'dns'"
         }
 
         It 'accepts an empty list' {
-            { Assert-NavGitAdditionalParameters -AdditionalParameters @() } | Should -Not -Throw
+            { Assert-NAVGitAdditionalParameters -AdditionalParameters @() } | Should -Not -Throw
         }
     }
 
-    Describe 'Format-NavGitContainerCommand' {
+    Describe 'Format-NAVGitContainerCommand' {
         It 'shows parameters and hides the password' {
-            $text = Format-NavGitContainerCommand -Parameters @{
+            $text = Format-NAVGitContainerCommand -Parameters @{
                 accept_eula = $true; containerName = 'cust'; bakFile = 'C:\b.bak'; Credential = $credential; myScripts = @('a.ps1')
             }
             $text | Should -Match '^New-BcContainer'
@@ -166,7 +166,7 @@ InModuleScope NavGit {
         }
     }
 
-    Describe 'Get-NavGitHostDatabaseServer' {
+    Describe 'Get-NAVGitHostDatabaseServer' {
         It 'maps <Server>\<Instance> to <Expected>' -ForEach @(
             @{ Server = 'localhost'; Instance = 'SQLEXPRESS'; Expected = 'cust' }
             @{ Server = 'localhost'; Instance = ''; Expected = 'cust' }
@@ -174,22 +174,22 @@ InModuleScope NavGit {
             @{ Server = 'host.containerhelper.internal'; Instance = 'SQL2019'; Expected = 'localhost\SQL2019' }
             @{ Server = 'sql01'; Instance = ''; Expected = 'sql01' }
         ) {
-            Get-NavGitHostDatabaseServer -ContainerName 'cust' -DatabaseServer $Server -DatabaseInstance $Instance | Should -Be $Expected
+            Get-NAVGitHostDatabaseServer -ContainerName 'cust' -DatabaseServer $Server -DatabaseInstance $Instance | Should -Be $Expected
         }
     }
 
-    Describe 'Get-NavGitClientFolder' {
+    Describe 'Get-NAVGitClientFolder' {
         It 'finds the RoleTailored Client copied by -includeCSide' {
             $helper = Join-Path $TestDrive 'BcContainerHelper'
             $client = Join-Path $helper 'Extensions\cust\Program Files\110\RoleTailored Client'
             New-Item -ItemType Directory -Path $client -Force | Out-Null
 
-            Get-NavGitClientFolder -ContainerName 'cust' -HostHelperFolder $helper | Should -Be $client
-            Get-NavGitClientFolder -ContainerName 'other' -HostHelperFolder $helper | Should -BeNullOrEmpty
+            Get-NAVGitClientFolder -ContainerName 'cust' -HostHelperFolder $helper | Should -Be $client
+            Get-NAVGitClientFolder -ContainerName 'other' -HostHelperFolder $helper | Should -BeNullOrEmpty
         }
     }
 
-    Describe 'Get-NavGitCredential' {
+    Describe 'Get-NAVGitCredential' {
         BeforeEach {
             $env:NAVGIT_DATA_PATH = Join-Path $TestDrive ('data-' + [guid]::NewGuid().ToString('N').Substring(0, 6))
         }
@@ -200,8 +200,8 @@ InModuleScope NavGit {
         It 'prompts once and stores the credential encrypted' {
             Mock Get-Credential { New-TestCredential 'admin' 'secret' }
 
-            $first = Get-NavGitCredential -ContainerName 'cust' -Auth NavUserPassword
-            $second = Get-NavGitCredential -ContainerName 'other' -Auth NavUserPassword
+            $first = Get-NAVGitCredential -ContainerName 'cust' -Auth NavUserPassword
+            $second = Get-NAVGitCredential -ContainerName 'other' -Auth NavUserPassword
 
             $first.UserName | Should -Be 'admin'
             $second.GetNetworkCredential().Password | Should -Be 'secret'
@@ -212,31 +212,31 @@ InModuleScope NavGit {
 
         It 'prefers a container specific credential' {
             Mock Get-Credential { throw 'should not prompt' }
-            $folder = Get-NavGitDataPath -Name credentials
+            $folder = Get-NAVGitDataPath -Name credentials
             New-TestCredential 'default' 'a' | Export-Clixml (Join-Path $folder 'default.xml')
             New-TestCredential 'special' 'b' | Export-Clixml (Join-Path $folder 'cust.xml')
 
-            (Get-NavGitCredential -ContainerName 'cust' -Auth NavUserPassword).UserName | Should -Be 'special'
-            (Get-NavGitCredential -ContainerName 'other' -Auth NavUserPassword).UserName | Should -Be 'default'
+            (Get-NAVGitCredential -ContainerName 'cust' -Auth NavUserPassword).UserName | Should -Be 'special'
+            (Get-NAVGitCredential -ContainerName 'other' -Auth NavUserPassword).UserName | Should -Be 'default'
         }
 
         It 'ignores a stored credential for another user with Windows auth' {
-            $folder = Get-NavGitDataPath -Name credentials
+            $folder = Get-NAVGitDataPath -Name credentials
             New-TestCredential 'someoneelse' 'a' | Export-Clixml (Join-Path $folder 'default.xml')
             Mock Get-Credential { New-TestCredential "DOMAIN\$env:USERNAME" 'b' }
 
-            (Get-NavGitCredential -ContainerName 'cust' -Auth Windows).UserName | Should -Be "DOMAIN\$env:USERNAME"
+            (Get-NAVGitCredential -ContainerName 'cust' -Auth Windows).UserName | Should -Be "DOMAIN\$env:USERNAME"
             Should -Invoke Get-Credential -Times 1 -Exactly
         }
 
         It 'rejects another user for Windows auth' {
             Mock Get-Credential { New-TestCredential 'someoneelse' 'b' }
-            { Get-NavGitCredential -ContainerName 'cust' -Auth Windows } | Should -Throw '*requires the current Windows user*'
+            { Get-NAVGitCredential -ContainerName 'cust' -Auth Windows } | Should -Throw '*requires the current Windows user*'
         }
 
         It 'throws instead of prompting with -NoPrompt' {
             Mock Get-Credential { throw 'should not prompt' }
-            { Get-NavGitCredential -ContainerName 'cust' -Auth NavUserPassword -NoPrompt } | Should -Throw '*No stored credential*'
+            { Get-NAVGitCredential -ContainerName 'cust' -Auth NavUserPassword -NoPrompt } | Should -Throw '*No stored credential*'
         }
     }
 
@@ -252,7 +252,7 @@ InModuleScope NavGit {
             }
             Mock Get-BcContainerNavVersion { '11.0.43274.0-no' }
             Mock Get-BcContainerArtifactUrl { 'https://bcartifacts.azureedge.net/onprem/11.0.43274.0/no' }
-            Mock Get-NavGitClientFolder { 'C:\ProgramData\BcContainerHelper\Extensions\Customer-NAV201\Program Files\110\RoleTailored Client' }
+            Mock Get-NAVGitClientFolder { 'C:\ProgramData\BcContainerHelper\Extensions\Customer-NAV201\Program Files\110\RoleTailored Client' }
         }
         AfterAll {
             Remove-Item Env:\NAVGIT_DATA_PATH -ErrorAction SilentlyContinue
@@ -260,7 +260,7 @@ InModuleScope NavGit {
 
         It 'saves, reads and removes the state' {
             $config = Get-TestConfig
-            $state = Save-NavGitContainerState -Config $config -BackupPath 'C:\b.bak'
+            $state = Save-NAVGitContainerState -Config $config -BackupPath 'C:\b.bak'
 
             $state.containerName | Should -Be 'Customer-NAV201'
             $state.navVersion | Should -Be '11.0.43274.0'
@@ -275,19 +275,19 @@ InModuleScope NavGit {
             $state.repositoryPath | Should -Be $config.repositoryPath
             $state.clientFolder | Should -Match 'RoleTailored Client$'
 
-            (Get-NavGitContainerState -ContainerName 'Customer-NAV201').databaseName | Should -Be 'CRONUS'
-            Remove-NavGitContainerState -ContainerName 'Customer-NAV201'
-            Get-NavGitContainerState -ContainerName 'Customer-NAV201' | Should -BeNullOrEmpty
+            (Get-NAVGitContainerState -ContainerName 'Customer-NAV201').databaseName | Should -Be 'CRONUS'
+            Remove-NAVGitContainerState -ContainerName 'Customer-NAV201'
+            Get-NAVGitContainerState -ContainerName 'Customer-NAV201' | Should -BeNullOrEmpty
         }
     }
 
-    Describe 'New-NavGitContainer' {
+    Describe 'New-NAVGitContainer' {
         BeforeAll {
-            Mock Assert-NavGitAdministrator { }
-            Mock Assert-NavGitBcContainerHelper { }
-            Mock Get-NavGitCredential { $credential }
-            Mock Resolve-NavGitArtifactUrl { New-ArtifactInfo }
-            Mock Save-NavGitContainerState { @{ clientFolder = 'C:\x\RoleTailored Client' } }
+            Mock Assert-NAVGitAdministrator { }
+            Mock Assert-NAVGitBcContainerHelper { }
+            Mock Get-NAVGitCredential { $credential }
+            Mock Resolve-NAVGitArtifactUrl { New-ArtifactInfo }
+            Mock Save-NAVGitContainerState { @{ clientFolder = 'C:\x\RoleTailored Client' } }
             Mock Write-Host { }
         }
         BeforeEach {
@@ -303,40 +303,40 @@ InModuleScope NavGit {
         }
 
         It 'calls New-BcContainer with the native bakFile and saves the state' {
-            New-NavGitContainer -Path $repo
+            New-NAVGitContainer -Path $repo
 
             Should -Invoke New-BcContainer -Times 1 -Exactly -ParameterFilter {
                 $bakFile -eq $bak -and $imageName -eq 'navgit' -and $isolation -eq 'process' -and $includeCSide -and
                 $containerName -eq 'Customer-NAV201' -and -not $additionalParameters
             }
-            Should -Invoke Save-NavGitContainerState -Times 1 -Exactly -ParameterFilter { $BackupPath -eq $bak }
+            Should -Invoke Save-NAVGitContainerState -Times 1 -Exactly -ParameterFilter { $BackupPath -eq $bak }
         }
 
         It 'does not create anything with -WhatIf' {
-            New-NavGitContainer -Path $repo -WhatIf
+            New-NAVGitContainer -Path $repo -WhatIf
 
             Should -Invoke New-BcContainer -Times 0 -Exactly
-            Should -Invoke Save-NavGitContainerState -Times 0 -Exactly -Scope It
+            Should -Invoke Save-NAVGitContainerState -Times 0 -Exactly -Scope It
         }
 
         It 'replaces an existing container with -Force' {
             Mock Test-BcContainer { $true }
-            New-NavGitContainer -Path $repo -Force
+            New-NAVGitContainer -Path $repo -Force
             Should -Invoke New-BcContainer -Times 1 -Exactly
         }
 
         It 'requires elevation' {
-            Mock Assert-NavGitAdministrator { throw 'must run in an elevated PowerShell session' }
-            { New-NavGitContainer -Path $repo } | Should -Throw '*elevated*'
+            Mock Assert-NAVGitAdministrator { throw 'must run in an elevated PowerShell session' }
+            { New-NAVGitContainer -Path $repo } | Should -Throw '*elevated*'
             Should -Invoke New-BcContainer -Times 0 -Exactly
         }
     }
 
-    Describe 'Remove-NavGitContainer' {
+    Describe 'Remove-NAVGitContainer' {
         BeforeAll {
-            Mock Assert-NavGitAdministrator { }
-            Mock Assert-NavGitBcContainerHelper { }
-            Mock Remove-NavGitContainerState { }
+            Mock Assert-NAVGitAdministrator { }
+            Mock Assert-NAVGitBcContainerHelper { }
+            Mock Remove-NAVGitContainerState { }
             $env:NAVGIT_SETTINGS_PATH = Join-Path $TestDrive 'no-settings.json'
         }
         AfterAll {
@@ -348,10 +348,10 @@ InModuleScope NavGit {
             Mock Remove-BcContainer { }
             $repo = New-TestRepository
 
-            Remove-NavGitContainer -Path $repo -Force
+            Remove-NAVGitContainer -Path $repo -Force
 
             Should -Invoke Remove-BcContainer -Times 1 -Exactly -ParameterFilter { $containerName -eq 'Customer-NAV201' }
-            Should -Invoke Remove-NavGitContainerState -Times 1 -Exactly -Scope It
+            Should -Invoke Remove-NAVGitContainerState -Times 1 -Exactly -Scope It
         }
 
         It 'still clears the state when the container is already gone' {
@@ -359,10 +359,10 @@ InModuleScope NavGit {
             Mock Remove-BcContainer { }
             $repo = New-TestRepository
 
-            Remove-NavGitContainer -Path $repo -Force -WarningAction SilentlyContinue
+            Remove-NAVGitContainer -Path $repo -Force -WarningAction SilentlyContinue
 
             Should -Invoke Remove-BcContainer -Times 0 -Exactly -Scope It
-            Should -Invoke Remove-NavGitContainerState -Times 1 -Exactly -Scope It
+            Should -Invoke Remove-NAVGitContainerState -Times 1 -Exactly -Scope It
         }
     }
 }

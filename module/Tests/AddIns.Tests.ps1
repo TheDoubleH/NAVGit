@@ -1,8 +1,8 @@
 BeforeDiscovery {
-    Import-Module (Join-Path $PSScriptRoot '..\NavGit\NavGit.psd1') -Force
+    Import-Module (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -Force
 }
 
-InModuleScope NavGit {
+InModuleScope NAVGit {
     BeforeAll {
         . (Join-Path $PSScriptRoot 'TestHelpers.ps1')
         Mock Write-Host { }
@@ -20,54 +20,54 @@ InModuleScope NavGit {
     Describe 'paths.addIns configuration' {
         It 'defaults to the Add-Ins folder of the repository' {
             $repo = New-TestRepository
-            (Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)).addInsPath | Should -Be (Join-Path $repo 'Add-Ins')
+            (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).addInsPath | Should -Be (Join-Path $repo 'Add-Ins')
         }
 
         It 'can be disabled with an empty value' {
             $repo = New-TestRepository -Config @{ paths = @{ addIns = '' } }
-            (Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)).addInsPath | Should -BeNullOrEmpty
+            (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).addInsPath | Should -BeNullOrEmpty
         }
     }
 
-    Describe 'ConvertTo-NavGitContainerParameters with add-ins' {
+    Describe 'ConvertTo-NAVGitContainerParameters with add-ins' {
         BeforeAll {
             $artifact = [pscustomobject]@{ Url = 'https://x/onprem/11.0.43274.0/no'; Version = [version]'11.0.43274.0'; Country = 'no'; NavRelease = '2018' }
             $backup = [pscustomobject]@{ Path = 'C:\b.bak'; Source = 'Config' }
         }
 
         It 'maps the add-ins folder to c:\run\Add-ins next to other additionalParameters' {
-            $config = Get-NavGitConfig -Path (New-TestRepository -Config @{ additionalParameters = @('--env SqlTimeout=1200') }) -UserSettings (New-TestUserSettings)
-            $params = ConvertTo-NavGitContainerParameters -Config $config -ArtifactInfo $artifact -Backup $backup -Credential (New-TestCredential) -AddInsFolder 'C:\Repos\Customer\Add-Ins'
+            $config = Get-NAVGitConfig -Path (New-TestRepository -Config @{ additionalParameters = @('--env SqlTimeout=1200') }) -UserSettings (New-TestUserSettings)
+            $params = ConvertTo-NAVGitContainerParameters -Config $config -ArtifactInfo $artifact -Backup $backup -Credential (New-TestCredential) -AddInsFolder 'C:\Repos\Customer\Add-Ins'
 
             $params.additionalParameters | Should -Be @('--env SqlTimeout=1200', '--volume "C:\Repos\Customer\Add-Ins:c:\run\Add-ins"')
         }
 
         It 'adds nothing without an add-ins folder' {
-            $config = Get-NavGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings)
-            $params = ConvertTo-NavGitContainerParameters -Config $config -ArtifactInfo $artifact -Backup $backup -Credential (New-TestCredential)
+            $config = Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings)
+            $params = ConvertTo-NAVGitContainerParameters -Config $config -ArtifactInfo $artifact -Backup $backup -Credential (New-TestCredential)
             $params.ContainsKey('additionalParameters') | Should -BeFalse
         }
     }
 
-    Describe 'Get-NavGitContainerPlan with add-ins' {
+    Describe 'Get-NAVGitContainerPlan with add-ins' {
         BeforeAll {
-            Mock Resolve-NavGitArtifactUrl { [pscustomobject]@{ Url = 'https://x/onprem/11.0.43274.0/no'; Version = [version]'11.0.43274.0'; Country = 'no'; NavRelease = '2018' } }
-            Mock Resolve-NavGitBackupFile { [pscustomobject]@{ Path = 'C:\b.bak'; Source = 'Config' } }
-            Mock Resolve-NavGitLicenseFile { $null }
+            Mock Resolve-NAVGitArtifactUrl { [pscustomobject]@{ Url = 'https://x/onprem/11.0.43274.0/no'; Version = [version]'11.0.43274.0'; Country = 'no'; NavRelease = '2018' } }
+            Mock Resolve-NAVGitBackupFile { [pscustomobject]@{ Path = 'C:\b.bak'; Source = 'Config' } }
+            Mock Resolve-NAVGitLicenseFile { $null }
         }
 
         It 'maps the folder only when it exists' {
-            $withFolder = Get-NavGitConfig -Path (New-AddInsRepository) -UserSettings (New-TestUserSettings)
-            $plan = Get-NavGitContainerPlan -Config $withFolder -Credential (New-TestCredential)
+            $withFolder = Get-NAVGitConfig -Path (New-AddInsRepository) -UserSettings (New-TestUserSettings)
+            $plan = Get-NAVGitContainerPlan -Config $withFolder -Credential (New-TestCredential)
             $plan.AddInsFolder | Should -Be $withFolder.addInsPath
             $plan.Parameters.additionalParameters | Should -Match 'c:\\run\\Add-ins'
 
-            $withoutFolder = Get-NavGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings)
-            (Get-NavGitContainerPlan -Config $withoutFolder -Credential (New-TestCredential)).AddInsFolder | Should -BeNullOrEmpty
+            $withoutFolder = Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings)
+            (Get-NAVGitContainerPlan -Config $withoutFolder -Credential (New-TestCredential)).AddInsFolder | Should -BeNullOrEmpty
         }
     }
 
-    Describe 'Sync-NavGitAddIns' {
+    Describe 'Sync-NAVGitAddIns' {
         It 'copies through a shared folder into the container and into the host client folder' {
             $repo = New-AddInsRepository
             $staging = Join-Path $TestDrive 'addins-staging'
@@ -76,11 +76,11 @@ InModuleScope NavGit {
             New-Item -ItemType Directory -Path $client -Force | Out-Null
             $script:stagedFiles = $null
 
-            Mock Get-NavGitStagingFolder { $staging }
+            Mock Get-NAVGitStagingFolder { $staging }
             Mock Get-BcContainerPath { $path }
             Mock Invoke-ScriptInBcContainer { $script:stagedFiles = @(Get-ChildItem -Path $argumentList[0] -Recurse -File | ForEach-Object { $_.Name } | Sort-Object) }
 
-            Sync-NavGitAddIns -ContainerName 'cust' -AddInsFolder (Join-Path $repo 'Add-Ins') -ClientFolder $client
+            Sync-NAVGitAddIns -ContainerName 'cust' -AddInsFolder (Join-Path $repo 'Add-Ins') -ClientFolder $client
 
             $script:stagedFiles | Should -Be @('Customer.AddIn.dll', 'Helper.dll')
             Join-Path $client 'Add-ins\Customer.AddIn.dll' | Should -Exist
@@ -89,48 +89,48 @@ InModuleScope NavGit {
         }
     }
 
-    Describe 'Update-NavGitAddIns' {
+    Describe 'Update-NAVGitAddIns' {
         It 'syncs the add-ins of an existing container' {
             $repo = New-AddInsRepository
-            $config = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)
-            Mock Initialize-NavGitContainerCommand { [pscustomobject]@{ Config = $config; ContainerName = 'cust'; Credential = New-TestCredential; SqlCredential = $null } }
-            Mock Get-NavGitContainerState { @{ clientFolder = 'C:\client\RoleTailored Client' } }
-            Mock Sync-NavGitAddIns { }
+            $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)
+            Mock Initialize-NAVGitContainerCommand { [pscustomobject]@{ Config = $config; ContainerName = 'cust'; Credential = New-TestCredential; SqlCredential = $null } }
+            Mock Get-NAVGitContainerState { @{ clientFolder = 'C:\client\RoleTailored Client' } }
+            Mock Sync-NAVGitAddIns { }
 
-            Update-NavGitAddIns -Path $repo
+            Update-NAVGitAddIns -Path $repo
 
-            Should -Invoke Sync-NavGitAddIns -Times 1 -Exactly -ParameterFilter {
+            Should -Invoke Sync-NAVGitAddIns -Times 1 -Exactly -ParameterFilter {
                 $ContainerName -eq 'cust' -and $AddInsFolder -eq $config.addInsPath -and $ClientFolder -eq 'C:\client\RoleTailored Client'
             }
         }
 
         It 'throws when the repository has no add-ins folder' {
             $repo = New-TestRepository
-            $config = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)
-            Mock Initialize-NavGitContainerCommand { [pscustomobject]@{ Config = $config; ContainerName = 'cust'; Credential = New-TestCredential; SqlCredential = $null } }
-            { Update-NavGitAddIns -Path $repo } | Should -Throw '*No add-ins folder*'
+            $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)
+            Mock Initialize-NAVGitContainerCommand { [pscustomobject]@{ Config = $config; ContainerName = 'cust'; Credential = New-TestCredential; SqlCredential = $null } }
+            { Update-NAVGitAddIns -Path $repo } | Should -Throw '*No add-ins folder*'
         }
     }
 
-    Describe 'New-NavGitContainer with add-ins' {
+    Describe 'New-NAVGitContainer with add-ins' {
         It 'copies the add-ins after creating the container' {
             $repo = New-AddInsRepository
             $env:NAVGIT_SETTINGS_PATH = Join-Path $TestDrive 'none.json'
-            Mock Assert-NavGitAdministrator { }
-            Mock Assert-NavGitBcContainerHelper { }
-            Mock Get-NavGitCredential { New-TestCredential }
-            Mock Get-NavGitContainerPlan { [pscustomobject]@{ Artifact = [pscustomobject]@{ Url = 'u' }; Backup = [pscustomobject]@{ Path = 'C:\b.bak' }; AddInsFolder = 'C:\Repo\Add-Ins'; Parameters = @{ containerName = 'x' } } }
-            Mock Write-NavGitContainerPlan { }
+            Mock Assert-NAVGitAdministrator { }
+            Mock Assert-NAVGitBcContainerHelper { }
+            Mock Get-NAVGitCredential { New-TestCredential }
+            Mock Get-NAVGitContainerPlan { [pscustomobject]@{ Artifact = [pscustomobject]@{ Url = 'u' }; Backup = [pscustomobject]@{ Path = 'C:\b.bak' }; AddInsFolder = 'C:\Repo\Add-Ins'; Parameters = @{ containerName = 'x' } } }
+            Mock Write-NAVGitContainerPlan { }
             Mock Test-BcContainer { $false }
             Mock New-BcContainer { }
-            Mock Save-NavGitContainerState { @{ clientFolder = 'C:\client' } }
-            Mock Sync-NavGitAddIns { }
+            Mock Save-NAVGitContainerState { @{ clientFolder = 'C:\client' } }
+            Mock Sync-NAVGitAddIns { }
             try {
-                New-NavGitContainer -Path $repo
+                New-NAVGitContainer -Path $repo
             }
             finally { Remove-Item Env:\NAVGIT_SETTINGS_PATH }
 
-            Should -Invoke Sync-NavGitAddIns -Times 1 -Exactly -ParameterFilter { $AddInsFolder -eq 'C:\Repo\Add-Ins' -and $ClientFolder -eq 'C:\client' }
+            Should -Invoke Sync-NAVGitAddIns -Times 1 -Exactly -ParameterFilter { $AddInsFolder -eq 'C:\Repo\Add-Ins' -and $ClientFolder -eq 'C:\client' }
         }
     }
 

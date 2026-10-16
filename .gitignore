@@ -5,7 +5,7 @@ module/Tests/TestResults.xml
 vscode/node_modules/
 vscode/out/
 vscode/dist/
-vscode/resources/NavGit/
+vscode/resources/NAVGit/
 vscode/out-test/
 vscode/LICENSE
 *.vsix

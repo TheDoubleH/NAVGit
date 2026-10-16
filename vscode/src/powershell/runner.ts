@@ -16,8 +16,8 @@ export interface BackgroundResult {
     stderr: string;
 }
 
-/** Runs NavGit PowerShell commands in the integrated terminal, an elevated window or a hidden background process. */
-export class NavGitRunner implements vscode.Disposable {
+/** Runs NAVGit PowerShell commands in the integrated terminal, an elevated window or a hidden background process. */
+export class NAVGitRunner implements vscode.Disposable {
     private terminal: vscode.Terminal | undefined;
     private elevated: Promise<boolean> | undefined;
     private readonly subscriptions: vscode.Disposable[] = [];
@@ -47,13 +47,13 @@ export class NavGitRunner implements vscode.Disposable {
         this.subscriptions.forEach((subscription) => subscription.dispose());
     }
 
-    /** Path of NavGit.psd1: the navgit.modulePath setting, or the module bundled with the extension. */
+    /** Path of NAVGit.psd1: the navgit.modulePath setting, or the module bundled with the extension. */
     get modulePath(): string {
         const configured = vscode.workspace.getConfiguration('navgit').get<string>('modulePath', '').trim();
         if (configured) {
-            return configured.toLowerCase().endsWith('.psd1') ? configured : path.join(configured, 'NavGit.psd1');
+            return configured.toLowerCase().endsWith('.psd1') ? configured : path.join(configured, 'NAVGit.psd1');
         }
-        return path.join(this.extensionPath, 'resources', 'NavGit', 'NavGit.psd1');
+        return path.join(this.extensionPath, 'resources', 'NAVGit', 'NAVGit.psd1');
     }
 
     get powershellPath(): string {
@@ -62,7 +62,7 @@ export class NavGitRunner implements vscode.Disposable {
 
     assertModule(): void {
         if (!fs.existsSync(this.modulePath)) {
-            throw new Error(`The NavGit module was not found at ${this.modulePath}. Check the navgit.modulePath setting.`);
+            throw new Error(`The NAVGit module was not found at ${this.modulePath}. Check the navgit.modulePath setting.`);
         }
     }
 
@@ -83,12 +83,12 @@ export class NavGitRunner implements vscode.Disposable {
         const args = startElevatedArguments(this.powershellPath, elevatedScript(this.modulePath, title, body));
         const child = spawn(this.powershellPath, args, { windowsHide: true });
         child.on('error', (error) => {
-            void vscode.window.showErrorMessage(`NavGit: could not start PowerShell (${error.message}).`);
+            void vscode.window.showErrorMessage(`NAVGit: could not start PowerShell (${error.message}).`);
         });
         child.on('exit', (code) => {
             if (code !== 0) {
                 // Typically: the UAC prompt was declined.
-                void vscode.window.showWarningMessage(`NavGit: the elevated PowerShell window for '${title}' was not started.`);
+                void vscode.window.showWarningMessage(`NAVGit: the elevated PowerShell window for '${title}' was not started.`);
             }
         });
     }
@@ -119,7 +119,7 @@ export class NavGitRunner implements vscode.Disposable {
     private getTerminal(): vscode.Terminal {
         if (!this.terminal) {
             this.terminal = vscode.window.createTerminal({
-                name: 'NavGit',
+                name: 'NAVGit',
                 shellPath: this.powershellPath,
                 shellArgs: ['-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', importModuleLine(this.modulePath)],
             });

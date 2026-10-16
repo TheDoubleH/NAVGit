@@ -1,8 +1,8 @@
 {
   "name": "navgit",
-  "displayName": "NavGit",
+  "displayName": "NAVGit",
   "description": "Git workflow for Dynamics NAV 2016-2018 / Business Central 14 (C/AL) containers: build containers, import and export objects, start the client and C/SIDE.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "helgesen-consulting",
   "license": "Unlicense",
   "engines": {
@@ -25,30 +25,33 @@
   ],
   "contributes": {
     "commands": [
-      { "command": "navgit.buildAndUpdateContainer", "title": "Build and Update Container", "category": "NavGit" },
-      { "command": "navgit.buildContainer", "title": "Build Container", "category": "NavGit" },
-      { "command": "navgit.removeContainer", "title": "Remove Container", "category": "NavGit" },
-      { "command": "navgit.importTestToolkit", "title": "Import Test Toolkit", "category": "NavGit" },
-      { "command": "navgit.importAllObjects", "title": "Import All GIT Objects to NAV", "category": "NavGit" },
-      { "command": "navgit.exportObjects", "title": "Export NAV objects to GIT", "category": "NavGit" },
-      { "command": "navgit.updateAddIns", "title": "Update Add-ins", "category": "NavGit" },
-      { "command": "navgit.startDevEnv", "title": "Start Development Environment (FinSql)", "category": "NavGit" },
-      { "command": "navgit.startClientDefault", "title": "Start NAV Client (default)", "category": "NavGit" },
-      { "command": "navgit.startClient", "title": "Start NAV Client...", "category": "NavGit" },
-      { "command": "navgit.createConfig", "title": "Create navgit.json", "category": "NavGit" }
+      { "command": "navgit.buildAndUpdateContainer", "title": "Build and Update Container", "category": "NAVGit" },
+      { "command": "navgit.buildContainer", "title": "Build Container", "category": "NAVGit" },
+      { "command": "navgit.removeContainer", "title": "Remove Container", "category": "NAVGit" },
+      { "command": "navgit.importTestToolkit", "title": "Import Test Toolkit", "category": "NAVGit" },
+      { "command": "navgit.importAllObjects", "title": "Import All GIT Objects to NAV", "category": "NAVGit" },
+      { "command": "navgit.exportObjects", "title": "Export NAV objects to GIT", "category": "NAVGit" },
+      { "command": "navgit.compileUncompiled", "title": "Compile Uncompiled Objects", "category": "NAVGit" },
+      { "command": "navgit.compileModified", "title": "Compile Modified Objects", "category": "NAVGit" },
+      { "command": "navgit.compileAll", "title": "Compile All Objects", "category": "NAVGit" },
+      { "command": "navgit.updateAddIns", "title": "Update Add-ins", "category": "NAVGit" },
+      { "command": "navgit.startDevEnv", "title": "Start Development Environment (FinSql)", "category": "NAVGit" },
+      { "command": "navgit.startClientDefault", "title": "Start NAV Client (default)", "category": "NAVGit" },
+      { "command": "navgit.startClient", "title": "Start NAV Client...", "category": "NAVGit" },
+      { "command": "navgit.createConfig", "title": "Create navgit.json", "category": "NAVGit" }
     ],
     "configuration": {
-      "title": "NavGit",
+      "title": "NAVGit",
       "properties": {
         "navgit.modulePath": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Path to the NavGit PowerShell module (folder or `NavGit.psd1`). Empty uses the module bundled with the extension."
+          "markdownDescription": "Path to the NAVGit PowerShell module (folder or `NAVGit.psd1`). Empty uses the module bundled with the extension."
         },
         "navgit.powershellPath": {
           "type": "string",
           "default": "powershell.exe",
-          "markdownDescription": "PowerShell executable. NavGit targets Windows PowerShell 5.1 (`powershell.exe`)."
+          "markdownDescription": "PowerShell executable. NAVGit targets Windows PowerShell 5.1 (`powershell.exe`)."
         },
         "navgit.runMode": {
           "type": "string",
@@ -61,7 +64,7 @@
     "jsonValidation": [
       {
         "fileMatch": "navgit.json",
-        "url": "./resources/NavGit/Schema/navgit.schema.json"
+        "url": "./resources/NAVGit/Schema/navgit.schema.json"
       }
     ]
   },

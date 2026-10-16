@@ -12,7 +12,7 @@
         {
             "label": "navgit: test module",
             "type": "shell",
-            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ${workspaceFolder}/module/Tests/Invoke-NavGitTests.ps1",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ${workspaceFolder}/module/Tests/Invoke-NAVGitTests.ps1",
             "group": "test",
             "problemMatcher": []
         },

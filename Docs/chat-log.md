@@ -143,3 +143,35 @@ container. Set `containerName` (e.g. `Cryobank-ng`) to keep the old one.
 - **NavGit extension 0.1.0** installed in VS Code. The AdvaniaGIT extension is still installed; the command names
   don't clash.
 - Temporary files from testing are in the session scratchpad. A temporary `Cryobank` state file was removed again.
+
+## 8. Follow-up: first real use, rename and compile commands (version 0.2.0)
+
+Feedback after the first real try: it works, and starting the client is much faster than with AdvaniaGIT.
+
+Changes requested and made:
+
+- **Renamed NavGit to NAVGit.** This covers the module (`module\NAVGit\NAVGit.psd1`), all function and file names
+  (`New-NAVGitContainer`, ...), the VS Code category, the output channel and the docs.
+  - Unchanged, so existing setups keep working: `navgit.json`, the VS Code command IDs and settings (`navgit.*`),
+    and the environment variables (`NAVGIT_*`).
+  - The sections above keep the old spelling, as they were written.
+- **Three compile commands**, all run inside the container with `Compile-ObjectsInNavContainer`. AdvaniaGIT's
+  host-side compile does not work with NavUserPassword containers; compiling in the container does.
+
+| VS Code (NAVGit) | PowerShell | Filter |
+| --- | --- | --- |
+| Compile Uncompiled Objects | `Invoke-NAVGitCompile -Scope Uncompiled` | `Compiled=No` |
+| Compile Modified Objects | `Invoke-NAVGitCompile -Scope Modified` | `Modified=Yes` |
+| Compile All Objects (asks first) | `Invoke-NAVGitCompile -Scope All` | none |
+
+- **`Invoke-NAVGitCompile -Filter '...'`** compiles with any C/SIDE filter. Schema changes are synchronized with
+  `import.syncSchema`.
+- **`Commands.psd1` entries can carry fixed `Parameters`**, so several commands can share one function (the three
+  compile commands do).
+- **Test objects are only imported with the test toolkit.** Without `includeTestToolkit: true`, `Import-NAVGitObjects`
+  skips changed objects in `Tests` with a warning, because they can't compile without the toolkit. `-IncludeTests`
+  overrides this, for example after Import Test Toolkit. The test files are still read, so test objects in the
+  database are never treated as missing or marked `#DELETE`.
+- **Version 0.2.0** of the module and the extension; the extension is reinstalled in VS Code.
+
+Tests: 283 Pester tests and 19 extension tests passing.

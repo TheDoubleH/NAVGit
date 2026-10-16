@@ -1,10 +1,10 @@
-# NavGit
+# NAVGit
 
 A slim replacement for AdvaniaGIT: a PowerShell module and a VS Code extension for working with Dynamics NAV 2016,
 NAV 2017, NAV 2018 and Business Central 14 (C/AL) in Docker containers built with
 [BcContainerHelper](https://github.com/microsoft/navcontainerhelper).
 
-What NavGit does differently from AdvaniaGIT:
+What NAVGit does differently from AdvaniaGIT:
 
 - **The database backup is passed to `New-BcContainer -bakFile`** instead of as a raw `--env bakfile=` docker argument.
   BcContainerHelper then knows a backup is used and builds the image without the Cronus demo database (`-nodb`).
@@ -29,11 +29,11 @@ What NavGit does differently from AdvaniaGIT:
 PowerShell module (from this repository):
 
 ```powershell
-Import-Module C:\Repos\NAVGit\module\NavGit\NavGit.psd1
+Import-Module C:\Repos\NAVGit\module\NAVGit\NAVGit.psd1
 ```
 
-To have it available everywhere, copy `module\NavGit` to a folder in `$env:PSModulePath`
-(e.g. `C:\Program Files\WindowsPowerShell\Modules\NavGit`).
+To have it available everywhere, copy `module\NAVGit` to a folder in `$env:PSModulePath`
+(e.g. `C:\Program Files\WindowsPowerShell\Modules\NAVGit`).
 
 VS Code extension (bundles the module):
 
@@ -41,56 +41,64 @@ VS Code extension (bundles the module):
 cd C:\Repos\NAVGit\vscode
 npm install
 npm run package
-code --install-extension navgit-0.1.0.vsix
+code --install-extension navgit-0.2.0.vsix
 ```
 
 ## Quick start
 
 1. Create a `navgit.json` in the repository root:
-   - from an AdvaniaGIT repository: `ConvertFrom-AdvaniaGitSetup` (or *NavGit: Create navgit.json* in VS Code), or
-   - from scratch: `New-NavGitConfig -Nav 2018 -Cu cu30 -Country no -BakFile C:\Backups\Customer.bak`
+   - from an AdvaniaGIT repository: `ConvertFrom-AdvaniaGitSetup` (or *NAVGit: Create navgit.json* in VS Code), or
+   - from scratch: `New-NAVGitConfig -Nav 2018 -Cu cu30 -Country no -BakFile C:\Backups\Customer.bak`
 2. Optionally create the user settings (see below), e.g. to keep using `C:\AdvaniaGIT\Backup` and `C:\AdvaniaGIT\License`.
-3. Check what would be created: `Show-NavGitContainerCommand`
-4. Build the container and import the objects (elevated): `Update-NavGitContainer`
+3. Check what would be created: `Show-NAVGitContainerCommand`
+4. Build the container and import the objects (elevated): `Update-NAVGitContainer`
 
 ## Commands
 
-| VS Code (category *NavGit*) | PowerShell | Elevated |
+| VS Code (category *NAVGit*) | PowerShell | Elevated |
 | --- | --- | --- |
-| Build and Update Container | `Update-NavGitContainer` | yes |
-| Build Container | `New-NavGitContainer` | yes |
-| Remove Container | `Remove-NavGitContainer` | yes |
-| Import Test Toolkit | `Import-NavGitTestToolkit` | yes |
-| Import All GIT Objects to NAV | `Import-NavGitObjects` | yes |
-| Export NAV objects to GIT | `Export-NavGitObjects` | yes |
-| Update Add-ins | `Update-NavGitAddIns` | yes |
-| Start Development Environment (FinSql) | `Start-NavGitDevelopmentEnvironment` | no |
-| Start NAV Client (default) | `Start-NavGitClient` | no |
-| Start NAV Client... | `Start-NavGitClient -ProfileId <id>` (console: `-SelectProfile`) | no |
-| Create navgit.json | `New-NavGitConfig`, `ConvertFrom-AdvaniaGitSetup` | no |
+| Build and Update Container | `Update-NAVGitContainer` | yes |
+| Build Container | `New-NAVGitContainer` | yes |
+| Remove Container | `Remove-NAVGitContainer` | yes |
+| Import Test Toolkit | `Import-NAVGitTestToolkit` | yes |
+| Import All GIT Objects to NAV | `Import-NAVGitObjects` | yes |
+| Export NAV objects to GIT | `Export-NAVGitObjects` | yes |
+| Compile Uncompiled Objects | `Invoke-NAVGitCompile -Scope Uncompiled` (`Compiled=No`) | yes |
+| Compile Modified Objects | `Invoke-NAVGitCompile -Scope Modified` (`Modified=Yes`) | yes |
+| Compile All Objects | `Invoke-NAVGitCompile -Scope All` | yes |
+| Update Add-ins | `Update-NAVGitAddIns` | yes |
+| Start Development Environment (FinSql) | `Start-NAVGitDevelopmentEnvironment` | no |
+| Start NAV Client (default) | `Start-NAVGitClient` | no |
+| Start NAV Client... | `Start-NAVGitClient -ProfileId <id>` (console: `-SelectProfile`) | no |
+| Create navgit.json | `New-NAVGitConfig`, `ConvertFrom-AdvaniaGitSetup` | no |
 
 More PowerShell commands:
 
-- `Show-NavGitContainerCommand`: shows the `New-BcContainer` command for the repository (dry run, no elevation).
-- `New-NavGitContainer -WhatIf`: the same, with the elevation and container checks.
-- `Update-NavGitContainerState`: re-reads a container's configuration for the client commands. Use it for containers
-  that were not built by NavGit, e.g. existing AdvaniaGIT containers.
-- `Get-NavGitProfile`: lists the profiles (role centers) of the container database.
-- `Invoke-NavGitCommand -Name <name>`: runs a command by its registry name (used by the VS Code extension).
+- `Show-NAVGitContainerCommand`: shows the `New-BcContainer` command for the repository (dry run, no elevation).
+- `New-NAVGitContainer -WhatIf`: the same, with the elevation and container checks.
+- `Update-NAVGitContainerState`: re-reads a container's configuration for the client commands. Use it for containers
+  that were not built by NAVGit, e.g. existing AdvaniaGIT containers.
+- `Get-NAVGitProfile`: lists the profiles (role centers) of the container database.
+- `Invoke-NAVGitCommand -Name <name>`: runs a command by its registry name (used by the VS Code extension).
 
 All commands take `-Path` (default: the current folder); any folder or file inside the repository works.
 
 Useful switches:
 
-- `New-NavGitContainer -Force` / `Update-NavGitContainer -Force`: replace an existing container without asking.
-- `New-NavGitContainer -ResetCredential`: ask for the container credential again.
-- `Import-NavGitObjects -Force`: import every object file, also unchanged ones.
-- `Import-NavGitTestToolkit -LibrariesOnly`: only the test libraries.
+- `New-NAVGitContainer -Force` / `Update-NAVGitContainer -Force`: replace an existing container without asking.
+- `New-NAVGitContainer -ResetCredential`: ask for the container credential again.
+- `Import-NAVGitObjects -Force`: import every object file, also unchanged ones.
+- `Import-NAVGitObjects -IncludeTests`: also import the `Tests` folder when `includeTestToolkit` is off (e.g. after Import Test Toolkit).
+- `Import-NAVGitTestToolkit -LibrariesOnly`: only the test libraries.
+- `Invoke-NAVGitCompile -Filter 'Type=Codeunit;Id=50000..50099'`: compile with any C/SIDE filter.
+
+Compiling always runs inside the container with BcContainerHelper's `Compile-ObjectsInNavContainer`, so it also
+works for NavUserPassword containers. Schema changes are synchronized with `import.syncSchema` (default `Force`).
 
 ## navgit.json
 
 Plain JSON (no comments) in the repository root. VS Code validates it with the bundled schema
-(`module\NavGit\Schema\navgit.schema.json`). Only `projectName` and `artifact` are required.
+(`module\NAVGit\Schema\navgit.schema.json`). Only `projectName` and `artifact` are required.
 
 ```json
 {
@@ -121,7 +129,7 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 | `dns` | `""` | DNS server, or `hostDNS`. |
 | `updateHosts` | `true` | Add the container to the hosts file (needed by the client commands). |
 | `enableSymbolLoading` | `false` | Symbol loading (NAV 2018 / BC14 only). |
-| `includeTestToolkit` | `false` | Import the test toolkit while building the container (so Build and Update can compile test objects). |
+| `includeTestToolkit` | `false` | Import the test toolkit while building the container. Objects in `Tests` are only imported when this is set (or with `Import-NAVGitObjects -IncludeTests`), since they need the toolkit to compile. |
 | `testToolkit.country` | `""` | Localized test toolkit. |
 | `testToolkit.librariesOnly` | `false` | Only the test libraries. |
 | `myScripts` | `[]` | Scripts for `New-BcContainer -myScripts` (URLs or paths). |
@@ -141,7 +149,7 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 
 ## User settings
 
-`%APPDATA%\NavGit\settings.json` (optional, per user, not in Git):
+`%APPDATA%\NAVGit\settings.json` (optional, per user, not in Git):
 
 ```json
 {
@@ -160,16 +168,16 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 - `defaultAuth` / `defaultIsolation`: used when `navgit.json` has no `auth` / `isolation`.
 - `bcContainerHelperVersion`: pin a BcContainerHelper version.
 
-## Where NavGit keeps things
+## Where NAVGit keeps things
 
 | What | Where |
 | --- | --- |
-| Container credential (DPAPI encrypted, current user only) | `%LOCALAPPDATA%\NavGit\credentials\default.xml` (or `<container>.xml`) |
-| Container state for the client commands | `%LOCALAPPDATA%\NavGit\containers\<container>.json` |
+| Container credential (DPAPI encrypted, current user only) | `%LOCALAPPDATA%\NAVGit\credentials\default.xml` (or `<container>.xml`) |
+| Container state for the client commands | `%LOCALAPPDATA%\NAVGit\containers\<container>.json` |
 | Windows client and finsql.exe (copied by BcContainerHelper) | `C:\ProgramData\BcContainerHelper\Extensions\<container>\Program Files\<version>\RoleTailored Client` |
 | Temporary import/export files | `C:\ProgramData\BcContainerHelper\Extensions\<container>\navgit\<guid>` (removed afterwards) |
 
-For NavUserPassword containers the SQL `sa` password is the container password; NavGit uses it for imports, exports
+For NavUserPassword containers the SQL `sa` password is the container password; NAVGit uses it for imports, exports
 and the profile list.
 
 ## Moving from AdvaniaGIT
@@ -200,18 +208,18 @@ as in AdvaniaGIT) and writes `navgit.json`. Run it with `-WhatIf` first to see t
 
 Behaviour differences worth knowing:
 
-- AdvaniaGIT never imported the `Tests` folder; NavGit does, so the first import adds your test objects.
+- AdvaniaGIT never imported the `Tests` folder; NAVGit does when `includeTestToolkit` is set, so the first import adds your test objects. Without it, changed test objects are skipped with a warning (they are still read, so they are never treated as deleted).
 - Objects your license cannot export (`ExportTxtSkipUnlicensed`) are in the database but not in Git; the import lists
   them as "not in Git" and leaves them alone (`import.deleteMissing: warn`).
-- AdvaniaGIT containers are not known to the client commands until you run `Update-NavGitContainerState` once
+- AdvaniaGIT containers are not known to the client commands until you run `Update-NAVGitContainerState` once
   (elevated) in the repository.
 - Not ported: deltas (`storeAllObjects: false`), FTP backups, PasswordState, CI/AL build pipelines.
 
 ## Development
 
 ```text
-module/NavGit/        PowerShell module
-  Commands.psd1       command registry (used by Invoke-NavGitCommand and the extension)
+module/NAVGit/        PowerShell module
+  Commands.psd1       command registry (used by Invoke-NAVGitCommand and the extension)
   Public/             exported commands, one file per command
   Private/            helpers (Config, Container, Objects, Clients, State, Common)
   Schema/             navgit.json schema
@@ -222,17 +230,18 @@ vscode/               VS Code extension (TypeScript)
 Tests:
 
 ```powershell
-.\module\Tests\Invoke-NavGitTests.ps1          # Pester 5.5+ (Install-Module Pester -Scope CurrentUser -SkipPublisherCheck)
+.\module\Tests\Invoke-NAVGitTests.ps1          # Pester 5.5+ (Install-Module Pester -Scope CurrentUser -SkipPublisherCheck)
 cd vscode; npm test                            # extension unit tests
 ```
 
 In VS Code, F5 builds the extension and starts an Extension Development Host. Set `navgit.modulePath` to
-`C:\Repos\NAVGit\module\NavGit` to use the module from the repository instead of the bundled copy.
+`C:\Repos\NAVGit\module\NAVGit` to use the module from the repository instead of the bundled copy.
 
 Adding a command:
 
-1. Write the function in `module\NavGit\Public\<Area>\Verb-NavGitThing.ps1` (one function per file; the file name
+1. Write the function in `module\NAVGit\Public\<Area>\Verb-NAVGitThing.ps1` (one function per file; the file name
    is the exported function name).
-2. Add an entry to `module\NavGit\Commands.psd1` (name, function, elevation, BcContainerHelper).
+2. Add an entry to `module\NAVGit\Commands.psd1` (name, function, elevation, BcContainerHelper). Several entries
+   can share one function with different fixed `Parameters` (as the three compile commands do).
 3. Add an entry to `vscode\src\commands\registry.ts` and to `contributes.commands` in `vscode\package.json`.
 4. The tests check that the three lists match.

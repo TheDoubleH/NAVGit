@@ -1,11 +1,11 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { NavGitRunner } from '../powershell/runner';
+import { NAVGitRunner } from '../powershell/runner';
 import { invokeLine, parseJsonArray, quotePs } from '../powershell/script';
 import { configFileName, findAdvaniaGitRepositories, findRepositories } from '../workspace/findRepo';
-import { createConfigCommandId, NavGitCommand, navGitCommands, NavGitProfile, sortProfiles } from './registry';
+import { createConfigCommandId, NAVGitCommand, navGitCommands, NAVGitProfile, sortProfiles } from './registry';
 
-export function registerCommands(context: vscode.ExtensionContext, runner: NavGitRunner, output: vscode.OutputChannel): void {
+export function registerCommands(context: vscode.ExtensionContext, runner: NAVGitRunner, output: vscode.OutputChannel): void {
     for (const command of navGitCommands) {
         context.subscriptions.push(
             vscode.commands.registerCommand(command.id, () => runSafely(output, command.title, () => runCommand(command, runner))),
@@ -23,11 +23,11 @@ async function runSafely(output: vscode.OutputChannel, title: string, action: ()
     catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         output.appendLine(`${title} failed: ${message}`);
-        void vscode.window.showErrorMessage(`NavGit: ${message}`);
+        void vscode.window.showErrorMessage(`NAVGit: ${message}`);
     }
 }
 
-async function runCommand(command: NavGitCommand, runner: NavGitRunner): Promise<void> {
+async function runCommand(command: NAVGitCommand, runner: NAVGitRunner): Promise<void> {
     const repository = await pickRepository();
     if (!repository) {
         return;
@@ -59,22 +59,22 @@ async function runCommand(command: NavGitCommand, runner: NavGitRunner): Promise
     await runBackgroundCommand(runner, command.title, invokeLine(command.psName, repository, { profileId, asJson: true }));
 }
 
-async function runBackgroundCommand(runner: NavGitRunner, title: string, body: string): Promise<string> {
+async function runBackgroundCommand(runner: NAVGitRunner, title: string, body: string): Promise<string> {
     const result = await vscode.window.withProgress(
-        { location: vscode.ProgressLocation.Window, title: `NavGit: ${title}` },
+        { location: vscode.ProgressLocation.Window, title: `NAVGit: ${title}` },
         () => runner.runBackground(title, body),
     );
     if (result.exitCode !== 0) {
-        const message = result.stderr.replace(/^NavGit:\s*/gm, '').trim() || `${title} failed (exit code ${result.exitCode}).`;
+        const message = result.stderr.replace(/^NAVGit:\s*/gm, '').trim() || `${title} failed (exit code ${result.exitCode}).`;
         throw new Error(message);
     }
     return result.stdout;
 }
 
 /** Returns the profile id, '' for the default role center, or undefined when cancelled. */
-async function pickProfile(runner: NavGitRunner, repository: string): Promise<string | undefined> {
+async function pickProfile(runner: NAVGitRunner, repository: string): Promise<string | undefined> {
     const stdout = await runBackgroundCommand(runner, 'Reading profiles', invokeLine('GetProfiles', repository, { asJson: true }));
-    const profiles = sortProfiles(parseJsonArray<NavGitProfile>(stdout));
+    const profiles = sortProfiles(parseJsonArray<NAVGitProfile>(stdout));
 
     type ProfileItem = vscode.QuickPickItem & { profileId: string };
     const items: ProfileItem[] = [
@@ -99,7 +99,7 @@ async function pickRepository(): Promise<string | undefined> {
     const repositories = findRepositories(activeFilePath(), workspaceFolderPaths());
     if (repositories.length === 0) {
         const create = 'Create navgit.json';
-        const answer = await vscode.window.showErrorMessage(`NavGit: no ${configFileName} found in the workspace.`, create);
+        const answer = await vscode.window.showErrorMessage(`NAVGit: no ${configFileName} found in the workspace.`, create);
         if (answer === create) {
             await vscode.commands.executeCommand(createConfigCommandId);
         }
@@ -110,12 +110,12 @@ async function pickRepository(): Promise<string | undefined> {
     }
     const picked = await vscode.window.showQuickPick(
         repositories.map((repository) => ({ label: path.basename(repository), description: repository, repository })),
-        { placeHolder: 'Select the NavGit repository' },
+        { placeHolder: 'Select the NAVGit repository' },
     );
     return picked?.repository;
 }
 
-async function createConfig(runner: NavGitRunner): Promise<void> {
+async function createConfig(runner: NAVGitRunner): Promise<void> {
     const folders = workspaceFolderPaths();
     if (folders.length === 0) {
         throw new Error('Open the repository folder first.');
@@ -166,7 +166,7 @@ async function createConfig(runner: NavGitRunner): Promise<void> {
     const document = await vscode.workspace.openTextDocument(path.join(folder, configFileName));
     await vscode.window.showTextDocument(document);
     if (notes.length > 0) {
-        void vscode.window.showWarningMessage(`NavGit: ${notes.join(' ')}`);
+        void vscode.window.showWarningMessage(`NAVGit: ${notes.join(' ')}`);
     }
 }
 
@@ -187,7 +187,7 @@ async function newConfigBody(folder: string): Promise<string> {
     if (country === undefined) {
         return '';
     }
-    return `New-NavGitConfig -Path ${quotePs(folder)} ${release.args} -Country ${quotePs(country || 'w1')}`;
+    return `New-NAVGitConfig -Path ${quotePs(folder)} ${release.args} -Country ${quotePs(country || 'w1')}`;
 }
 
 function activeFilePath(): string | undefined {

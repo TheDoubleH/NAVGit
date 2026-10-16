@@ -1,89 +1,89 @@
 BeforeDiscovery {
-    Import-Module (Join-Path $PSScriptRoot '..\NavGit\NavGit.psd1') -Force
+    Import-Module (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -Force
 }
 
-InModuleScope NavGit {
+InModuleScope NAVGit {
     BeforeAll {
         . (Join-Path $PSScriptRoot 'TestHelpers.ps1')
         Mock Write-Host { }
     }
 
-    Describe 'Import-NavGitTestToolkit' {
+    Describe 'Import-NAVGitTestToolkit' {
         BeforeEach {
             $repo = New-TestRepository -Config @{ testToolkit = @{ country = 'no'; librariesOnly = $false } }
-            $config = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)
-            Mock Initialize-NavGitContainerCommand {
+            $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)
+            Mock Initialize-NAVGitContainerCommand {
                 [pscustomobject]@{ Config = $config; ContainerName = 'cust'; Credential = New-TestCredential; SqlCredential = New-TestCredential 'sa' }
             }
             Mock Import-TestToolkitToBcContainer { }
-            Mock Invoke-NavGitCompile { @() }
+            Mock Invoke-NAVGitContainerCompile { @() }
         }
 
         It 'imports the toolkit with the configured country and compiles' {
-            $result = Import-NavGitTestToolkit -Path $repo
+            $result = Import-NAVGitTestToolkit -Path $repo
 
             Should -Invoke Import-TestToolkitToBcContainer -Times 1 -Exactly -ParameterFilter {
                 $containerName -eq 'cust' -and $testToolkitCountry -eq 'no' -and -not $includeTestLibrariesOnly -and $sqlCredential.UserName -eq 'sa'
             }
-            Should -Invoke Invoke-NavGitCompile -Times 1 -Exactly
+            Should -Invoke Invoke-NAVGitContainerCompile -Times 1 -Exactly
             $result.Uncompiled | Should -Be 0
         }
 
         It 'imports only the libraries with -LibrariesOnly' {
-            $null = Import-NavGitTestToolkit -Path $repo -LibrariesOnly
+            $null = Import-NAVGitTestToolkit -Path $repo -LibrariesOnly
             Should -Invoke Import-TestToolkitToBcContainer -Times 1 -Exactly -ParameterFilter { $includeTestLibrariesOnly }
         }
     }
 
-    Describe 'Invoke-NavGitCommand' {
+    Describe 'Invoke-NAVGitCommand' {
         BeforeEach {
             $repo = New-TestRepository
-            Mock Assert-NavGitAdministrator { }
-            Mock Assert-NavGitBcContainerHelper { }
-            Mock Get-NavGitUserSettings { New-TestUserSettings }
-            Mock Write-NavGitLog { }
+            Mock Assert-NAVGitAdministrator { }
+            Mock Assert-NAVGitBcContainerHelper { }
+            Mock Get-NAVGitUserSettings { New-TestUserSettings }
+            Mock Write-NAVGitLog { }
         }
 
         It 'runs the registered function with the repository and -Force' {
-            Mock New-NavGitContainer { }
-            Invoke-NavGitCommand -Name BuildContainer -Repository $repo -Force
+            Mock New-NAVGitContainer { }
+            Invoke-NAVGitCommand -Name BuildContainer -Repository $repo -Force
 
-            Should -Invoke New-NavGitContainer -Times 1 -Exactly -ParameterFilter { $Path -eq $repo -and $Force }
-            Should -Invoke Assert-NavGitAdministrator -Times 1 -Exactly
-            Should -Invoke Assert-NavGitBcContainerHelper -Times 1 -Exactly
+            Should -Invoke New-NAVGitContainer -Times 1 -Exactly -ParameterFilter { $Path -eq $repo -and $Force }
+            Should -Invoke Assert-NAVGitAdministrator -Times 1 -Exactly
+            Should -Invoke Assert-NAVGitBcContainerHelper -Times 1 -Exactly
             $LASTEXITCODE | Should -Be 0
         }
 
         It 'does not pass -Force to commands without it' {
-            Mock Export-NavGitObjects { }
-            Invoke-NavGitCommand -Name ExportObjects -Repository $repo -Force
-            Should -Invoke Export-NavGitObjects -Times 1 -Exactly -ParameterFilter { -not $PSBoundParameters.ContainsKey('Force') }
+            Mock Export-NAVGitObjects { }
+            Invoke-NAVGitCommand -Name ExportObjects -Repository $repo -Force
+            Should -Invoke Export-NAVGitObjects -Times 1 -Exactly -ParameterFilter { -not $PSBoundParameters.ContainsKey('Force') }
         }
 
         It 'sets LASTEXITCODE to 1 and reports the error when the command fails' {
-            Mock Export-NavGitObjects { throw 'export broke' }
-            Invoke-NavGitCommand -Name ExportObjects -Repository $repo
+            Mock Export-NAVGitObjects { throw 'export broke' }
+            Invoke-NAVGitCommand -Name ExportObjects -Repository $repo
             $LASTEXITCODE | Should -Be 1
             Should -Invoke Write-Host -ParameterFilter { $Object -match 'export broke' }
         }
 
         It 'fails for an unknown command' {
-            Invoke-NavGitCommand -Name Nope -Repository $repo
+            Invoke-NAVGitCommand -Name Nope -Repository $repo
             $LASTEXITCODE | Should -Be 1
         }
 
         It 'writes the result as a JSON array with -AsJson' {
-            Mock Export-NavGitObjects { [pscustomobject]@{ Added = @('TAB18.TXT') } }
-            $json = Invoke-NavGitCommand -Name ExportObjects -Repository $repo -AsJson
+            Mock Export-NAVGitObjects { [pscustomobject]@{ Added = @('TAB18.TXT') } }
+            $json = Invoke-NAVGitCommand -Name ExportObjects -Repository $repo -AsJson
             $parsed = @($json | ConvertFrom-Json)
             $parsed[0].Added | Should -Be 'TAB18.TXT'
         }
     }
 
-    Describe 'ConvertTo-NavGitJson' {
+    Describe 'ConvertTo-NAVGitJson' {
         It 'writes readable JSON that round-trips' {
             $value = [ordered]@{ name = 'a "b" \ c'; flag = $true; none = $null; count = 3; list = @('x', 'y'); empty = @(); nested = [ordered]@{ k = 'v' } }
-            $json = ConvertTo-NavGitJson -InputObject $value
+            $json = ConvertTo-NAVGitJson -InputObject $value
 
             $json | Should -Match '^\{\r\n  "name": "a \\"b\\" \\\\ c",'
             $parsed = $json | ConvertFrom-Json
@@ -95,14 +95,14 @@ InModuleScope NavGit {
         }
     }
 
-    Describe 'New-NavGitConfig' {
+    Describe 'New-NAVGitConfig' {
         It 'creates a valid navgit.json' {
             $folder = Join-Path $TestDrive 'NewRepo'
             New-Item -ItemType Directory -Path $folder -Force | Out-Null
             $env:NAVGIT_SETTINGS_PATH = Join-Path $TestDrive 'none.json'
             try {
-                $null = New-NavGitConfig -Path $folder -Nav 2018 -Cu cu30 -Country no -BakFile 'C:\Backups\x.bak' -Isolation process
-                $config = Get-NavGitConfig -Path $folder -UserSettings (New-TestUserSettings)
+                $null = New-NAVGitConfig -Path $folder -Nav 2018 -Cu cu30 -Country no -BakFile 'C:\Backups\x.bak' -Isolation process
+                $config = Get-NAVGitConfig -Path $folder -UserSettings (New-TestUserSettings)
             }
             finally { Remove-Item Env:\NAVGIT_SETTINGS_PATH }
 
@@ -115,7 +115,7 @@ InModuleScope NavGit {
 
         It 'does not overwrite an existing file without -Force' {
             $repo = New-TestRepository
-            { New-NavGitConfig -Path $repo -Nav 2018 } | Should -Throw '*already exists*'
+            { New-NAVGitConfig -Path $repo -Nav 2018 } | Should -Throw '*already exists*'
         }
     }
 
@@ -182,7 +182,7 @@ InModuleScope NavGit {
             }
             finally { Remove-Item Env:\NAVGIT_SETTINGS_PATH }
 
-            $config = Get-NavGitConfig -Path $folder -UserSettings (New-TestUserSettings)
+            $config = Get-NAVGitConfig -Path $folder -UserSettings (New-TestUserSettings)
             $config.isolation | Should -Be 'process'
             $config.auth | Should -Be 'NavUserPassword'
             $config.licenseFile | Should -Be 'Cryobank.flf'

@@ -1,4 +1,4 @@
-// Finds NavGit repositories (folders with navgit.json). No VS Code dependencies (unit tested).
+// Finds NAVGit repositories (folders with navgit.json). No VS Code dependencies (unit tested).
 import * as fs from 'fs';
 import * as path from 'path';
 

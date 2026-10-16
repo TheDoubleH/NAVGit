@@ -1,16 +1,16 @@
 BeforeDiscovery {
-    Import-Module (Join-Path $PSScriptRoot '..\NavGit\NavGit.psd1') -Force
+    Import-Module (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -Force
 }
 
-InModuleScope NavGit {
+InModuleScope NAVGit {
     BeforeAll {
         . (Join-Path $PSScriptRoot 'TestHelpers.ps1')
     }
 
-    Describe 'ConvertTo-NavGitHashtable' {
+    Describe 'ConvertTo-NAVGitHashtable' {
         It 'converts nested objects and keeps arrays (including empty and single item)' {
             $json = '{ "a": { "b": 1 }, "empty": [], "one": ["x"], "many": [ { "c": true }, { "c": false } ] }' | ConvertFrom-Json
-            $result = ConvertTo-NavGitHashtable $json
+            $result = ConvertTo-NAVGitHashtable $json
 
             $result | Should -BeOfType [hashtable]
             $result.a | Should -BeOfType [hashtable]
@@ -24,9 +24,9 @@ InModuleScope NavGit {
         }
     }
 
-    Describe 'Merge-NavGitHashtable' {
+    Describe 'Merge-NAVGitHashtable' {
         It 'merges nested hashtables and lets the override win' {
-            $merged = Merge-NavGitHashtable -Base @{ a = 1; n = @{ x = 1; y = 2 }; list = @(1, 2) } -Override @{ n = @{ y = 3 }; list = @(9); b = 2 }
+            $merged = Merge-NAVGitHashtable -Base @{ a = 1; n = @{ x = 1; y = 2 }; list = @(1, 2) } -Override @{ n = @{ y = 3 }; list = @(9); b = 2 }
             $merged.a | Should -Be 1
             $merged.b | Should -Be 2
             $merged.n.x | Should -Be 1
@@ -35,13 +35,13 @@ InModuleScope NavGit {
         }
     }
 
-    Describe 'Find-NavGitConfigFile' {
+    Describe 'Find-NAVGitConfigFile' {
         It 'finds navgit.json in a parent folder' {
             $repo = New-TestRepository
             $deep = Join-Path $repo 'Objects\Sub'
             New-Item -ItemType Directory -Path $deep -Force | Out-Null
 
-            Find-NavGitConfigFile -Path $deep | Should -Be (Join-Path $repo 'navgit.json')
+            Find-NAVGitConfigFile -Path $deep | Should -Be (Join-Path $repo 'navgit.json')
         }
 
         It 'accepts a file path inside the repository' {
@@ -49,19 +49,19 @@ InModuleScope NavGit {
             $file = Join-Path $repo 'TAB18.TXT'
             Set-Content -LiteralPath $file -Value 'x'
 
-            Find-NavGitConfigFile -Path $file | Should -Be (Join-Path $repo 'navgit.json')
+            Find-NAVGitConfigFile -Path $file | Should -Be (Join-Path $repo 'navgit.json')
         }
 
         It 'returns null when there is no navgit.json' {
             $folder = Join-Path $TestDrive 'nothing-here'
             New-Item -ItemType Directory -Path $folder -Force | Out-Null
-            Find-NavGitConfigFile -Path $folder | Should -BeNullOrEmpty
+            Find-NAVGitConfigFile -Path $folder | Should -BeNullOrEmpty
         }
     }
 
-    Describe 'Get-NavGitUserSettings' {
+    Describe 'Get-NAVGitUserSettings' {
         It 'returns defaults when the file does not exist' {
-            $settings = Get-NavGitUserSettings -Path (Join-Path $TestDrive 'missing.json')
+            $settings = Get-NAVGitUserSettings -Path (Join-Path $TestDrive 'missing.json')
             $settings.backupFolder | Should -Be ''
             $settings.defaultIsolation | Should -Be ''
             $settings.settingsPath | Should -Be (Join-Path $TestDrive 'missing.json')
@@ -71,7 +71,7 @@ InModuleScope NavGit {
             $path = Join-Path $TestDrive 'settings.json'
             Set-Content -LiteralPath $path -Value '{ "backupFolder": "D:\\Backups", "defaultIsolation": "process", "typo": 1 }'
 
-            $settings = Get-NavGitUserSettings -Path $path -WarningVariable warnings -WarningAction SilentlyContinue
+            $settings = Get-NAVGitUserSettings -Path $path -WarningVariable warnings -WarningAction SilentlyContinue
             $settings.backupFolder | Should -Be 'D:\Backups'
             $settings.defaultIsolation | Should -Be 'process'
             $warnings | Should -Match "unknown setting 'typo'"
@@ -80,20 +80,20 @@ InModuleScope NavGit {
         It 'rejects an invalid defaultIsolation' {
             $path = Join-Path $TestDrive 'bad-settings.json'
             Set-Content -LiteralPath $path -Value '{ "defaultIsolation": "vm" }'
-            { Get-NavGitUserSettings -Path $path } | Should -Throw '*defaultIsolation*'
+            { Get-NAVGitUserSettings -Path $path } | Should -Throw '*defaultIsolation*'
         }
 
         It 'uses NAVGIT_SETTINGS_PATH when set' {
             $env:NAVGIT_SETTINGS_PATH = 'X:\custom\settings.json'
-            try { Get-NavGitUserSettingsPath | Should -Be 'X:\custom\settings.json' }
+            try { Get-NAVGitUserSettingsPath | Should -Be 'X:\custom\settings.json' }
             finally { Remove-Item Env:\NAVGIT_SETTINGS_PATH }
         }
     }
 
-    Describe 'Get-NavGitConfig' {
+    Describe 'Get-NAVGitConfig' {
         It 'applies defaults and resolves context paths' {
             $repo = New-TestRepository
-            $config = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)
+            $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)
 
             $config.projectName | Should -Be 'Customer_NAV2018'
             $config.containerName | Should -Be 'Customer-NAV201'
@@ -109,7 +109,7 @@ InModuleScope NavGit {
 
         It 'lets navgit.json override nested defaults without losing siblings' {
             $repo = New-TestRepository -Config @{ paths = @{ tests = 'TestObjects' } }
-            $config = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)
+            $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)
 
             $config.paths.tests | Should -Be 'TestObjects'
             $config.paths.objects | Should -Be 'Objects'
@@ -117,74 +117,74 @@ InModuleScope NavGit {
 
         It 'truncates the derived container name to 15 characters' {
             $repo = New-TestRepository -Config @{ projectName = 'A_Very_Long_Project_Name' }
-            (Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)).containerName | Should -Be 'A-Very-Long-Pro'
+            (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).containerName | Should -Be 'A-Very-Long-Pro'
         }
 
         Context 'isolation precedence' {
             It 'uses navgit.json first' {
                 $repo = New-TestRepository -Config @{ isolation = 'process' }
-                (Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ defaultIsolation = 'hyperv' })).isolation | Should -Be 'process'
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ defaultIsolation = 'hyperv' })).isolation | Should -Be 'process'
             }
 
             It 'keeps an explicit empty isolation from navgit.json' {
                 $repo = New-TestRepository -Config @{ isolation = '' }
-                (Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ defaultIsolation = 'hyperv' })).isolation | Should -Be ''
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ defaultIsolation = 'hyperv' })).isolation | Should -Be ''
             }
 
             It 'falls back to the user defaultIsolation' {
                 $repo = New-TestRepository
-                (Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ defaultIsolation = 'hyperv' })).isolation | Should -Be 'hyperv'
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ defaultIsolation = 'hyperv' })).isolation | Should -Be 'hyperv'
             }
 
             It 'defaults to empty (BcContainerHelper decides)' {
                 $repo = New-TestRepository
-                (Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings)).isolation | Should -Be ''
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).isolation | Should -Be ''
             }
 
             It 'rejects an invalid isolation' {
                 $repo = New-TestRepository -Config @{ isolation = 'vm' }
-                { Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings) } | Should -Throw "*'isolation' must be one of*"
+                { Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings) } | Should -Throw "*'isolation' must be one of*"
             }
         }
 
         Context 'auth default' {
             It 'uses the user defaultAuth' {
-                Get-NavGitDefaultAuth -UserSettings (New-TestUserSettings @{ defaultAuth = 'Windows' }) -UserDomain 'AzureAD' | Should -Be 'Windows'
+                Get-NAVGitDefaultAuth -UserSettings (New-TestUserSettings @{ defaultAuth = 'Windows' }) -UserDomain 'AzureAD' | Should -Be 'Windows'
             }
 
             It 'uses NavUserPassword for Azure AD accounts' {
-                Get-NavGitDefaultAuth -UserSettings (New-TestUserSettings) -UserDomain 'AzureAD' | Should -Be 'NavUserPassword'
+                Get-NAVGitDefaultAuth -UserSettings (New-TestUserSettings) -UserDomain 'AzureAD' | Should -Be 'NavUserPassword'
             }
 
             It 'uses Windows otherwise' {
-                Get-NavGitDefaultAuth -UserSettings (New-TestUserSettings) -UserDomain 'CONTOSO' | Should -Be 'Windows'
+                Get-NAVGitDefaultAuth -UserSettings (New-TestUserSettings) -UserDomain 'CONTOSO' | Should -Be 'Windows'
             }
         }
 
         It 'throws when no navgit.json exists' {
             $folder = Join-Path $TestDrive 'no-config'
             New-Item -ItemType Directory -Path $folder -Force | Out-Null
-            { Get-NavGitConfig -Path $folder -UserSettings (New-TestUserSettings) } | Should -Throw '*No navgit.json found*'
+            { Get-NAVGitConfig -Path $folder -UserSettings (New-TestUserSettings) } | Should -Throw '*No navgit.json found*'
         }
 
         It 'throws a clear error for invalid JSON' {
             $repo = New-TestRepository -RawJson '{ "projectName": "x", '
-            { Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings) } | Should -Throw '*is not valid JSON*'
+            { Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings) } | Should -Throw '*is not valid JSON*'
         }
 
         It 'warns about unknown keys' {
             $repo = New-TestRepository -Config @{ dockerImage = 'old'; paths = @{ objects = 'Objects'; test = 'x' } }
-            $null = Get-NavGitConfig -Path $repo -UserSettings (New-TestUserSettings) -WarningVariable warnings -WarningAction SilentlyContinue
+            $null = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings) -WarningVariable warnings -WarningAction SilentlyContinue
             $allWarnings = $warnings -join [Environment]::NewLine
             $allWarnings | Should -Match "unknown setting 'dockerImage'"
             $allWarnings | Should -Match "unknown setting 'paths.test'"
         }
     }
 
-    Describe 'Assert-NavGitConfig' {
+    Describe 'Assert-NAVGitConfig' {
         BeforeAll {
             function Get-ValidConfig {
-                $config = Merge-NavGitHashtable -Base (Get-NavGitDefaultConfig -UserSettings (New-TestUserSettings)) -Override @{
+                $config = Merge-NAVGitHashtable -Base (Get-NAVGitDefaultConfig -UserSettings (New-TestUserSettings)) -Override @{
                     projectName   = 'Cust'
                     containerName = 'Cust'
                     artifact      = @{ nav = '2018' }
@@ -194,7 +194,7 @@ InModuleScope NavGit {
         }
 
         It 'accepts a valid configuration' {
-            { Assert-NavGitConfig -Config (Get-ValidConfig) } | Should -Not -Throw
+            { Assert-NAVGitConfig -Config (Get-ValidConfig) } | Should -Not -Throw
         }
 
         It 'reports all problems at once' {
@@ -202,7 +202,7 @@ InModuleScope NavGit {
             $config.projectName = ''
             $config.auth = 'AAD'
             $config.updateHosts = 'yes'
-            $thrown = { Assert-NavGitConfig -Config $config } | Should -Throw -PassThru
+            $thrown = { Assert-NAVGitConfig -Config $config } | Should -Throw -PassThru
             $thrown.Exception.Message | Should -Match "'projectName' is required"
             $thrown.Exception.Message | Should -Match "'auth' must be one of"
             $thrown.Exception.Message | Should -Match "'updateHosts' must be true or false"
@@ -223,56 +223,56 @@ InModuleScope NavGit {
         ) {
             $config = Get-ValidConfig
             $config.artifact = $Artifact
-            { Assert-NavGitConfig -Config $config } | Should -Throw "*$Message*"
+            { Assert-NAVGitConfig -Config $config } | Should -Throw "*$Message*"
         }
 
         It 'accepts the version form for BC14' {
             $config = Get-ValidConfig
             $config.artifact = @{ type = 'OnPrem'; version = '14.0.29537.0'; country = 'w1'; select = 'Closest' }
-            { Assert-NavGitConfig -Config $config } | Should -Not -Throw
+            { Assert-NAVGitConfig -Config $config } | Should -Not -Throw
         }
 
         It 'rejects bakFile together with useDemo' {
             $config = Get-ValidConfig
             $config.database = @{ bakFile = 'x.bak'; useDemo = $true }
-            { Assert-NavGitConfig -Config $config } | Should -Throw "*cannot both be set*"
+            { Assert-NAVGitConfig -Config $config } | Should -Throw "*cannot both be set*"
         }
 
         It 'rejects an invalid container name' {
             $config = Get-ValidConfig
             $config.containerName = 'this-name-is-too-long'
-            { Assert-NavGitConfig -Config $config } | Should -Throw "*'containerName'*1-15 characters*"
+            { Assert-NAVGitConfig -Config $config } | Should -Throw "*'containerName'*1-15 characters*"
         }
 
         It 'rejects an invalid memoryLimit' {
             $config = Get-ValidConfig
             $config.memoryLimit = '8GB'
-            { Assert-NavGitConfig -Config $config } | Should -Throw "*'memoryLimit'*"
+            { Assert-NAVGitConfig -Config $config } | Should -Throw "*'memoryLimit'*"
         }
 
         It 'rejects identical or rooted object paths' {
             $config = Get-ValidConfig
             $config.paths = @{ objects = 'Objects'; tests = 'Objects\' }
-            { Assert-NavGitConfig -Config $config } | Should -Throw '*must be different folders*'
+            { Assert-NAVGitConfig -Config $config } | Should -Throw '*must be different folders*'
 
             $config.paths = @{ objects = 'C:\Objects'; tests = 'Tests' }
-            { Assert-NavGitConfig -Config $config } | Should -Throw "*'paths.objects' must be relative*"
+            { Assert-NAVGitConfig -Config $config } | Should -Throw "*'paths.objects' must be relative*"
         }
 
         It 'rejects an invalid versionListPattern regex' {
             $config = Get-ValidConfig
             $config.testObjects = @{ versionListPattern = '(Test'; includeTestCodeunits = $true }
-            { Assert-NavGitConfig -Config $config } | Should -Throw '*not a valid regular expression*'
+            { Assert-NAVGitConfig -Config $config } | Should -Throw '*not a valid regular expression*'
         }
 
         It 'rejects a non-array additionalParameters' {
             $config = Get-ValidConfig
             $config.additionalParameters = '--dns 8.8.8.8'
-            { Assert-NavGitConfig -Config $config } | Should -Throw "*'additionalParameters' must be an array of strings*"
+            { Assert-NAVGitConfig -Config $config } | Should -Throw "*'additionalParameters' must be an array of strings*"
         }
     }
 
-    Describe 'Get-NavGitContainerName' {
+    Describe 'Get-NAVGitContainerName' {
         It 'turns <ProjectName> into <Expected>' -ForEach @(
             @{ ProjectName = 'Cust_NAV2018'; Expected = 'Cust-NAV2018' }
             @{ ProjectName = 'Customer_NAV2018'; Expected = 'Customer-NAV201' }
@@ -280,7 +280,7 @@ InModuleScope NavGit {
             @{ ProjectName = '_lead'; Expected = 'lead' }
             @{ ProjectName = 'Fourteen_chars_'; Expected = 'Fourteen-chars' }
         ) {
-            Get-NavGitContainerName -ProjectName $ProjectName | Should -Be $Expected
+            Get-NAVGitContainerName -ProjectName $ProjectName | Should -Be $Expected
         }
     }
 }

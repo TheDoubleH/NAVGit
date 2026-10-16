@@ -1,25 +1,25 @@
 BeforeDiscovery {
-    Import-Module (Join-Path $PSScriptRoot '..\NavGit\NavGit.psd1') -Force
+    Import-Module (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -Force
 }
 
-Describe 'NavGit module' {
+Describe 'NAVGit module' {
     It 'has a valid manifest' {
-        { Test-ModuleManifest -Path (Join-Path $PSScriptRoot '..\NavGit\NavGit.psd1') -ErrorAction Stop } | Should -Not -Throw
+        { Test-ModuleManifest -Path (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -ErrorAction Stop } | Should -Not -Throw
     }
 
     It 'does not import BcContainerHelper on load' {
         Remove-Module BcContainerHelper -ErrorAction SilentlyContinue
-        Import-Module (Join-Path $PSScriptRoot '..\NavGit\NavGit.psd1') -Force
+        Import-Module (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -Force
         Get-Module BcContainerHelper | Should -BeNullOrEmpty
     }
 }
 
-InModuleScope NavGit {
+InModuleScope NAVGit {
     Describe 'navgit.schema.json' {
         BeforeAll {
-            $schemaPath = Join-Path $script:NavGitModuleRoot 'Schema\navgit.schema.json'
+            $schemaPath = Join-Path $script:NAVGitModuleRoot 'Schema\navgit.schema.json'
             $schema = Get-Content -LiteralPath $schemaPath -Raw | ConvertFrom-Json
-            $known = Get-NavGitKnownConfigKeys
+            $known = Get-NAVGitKnownConfigKeys
         }
 
         It 'is valid JSON with object properties' {
@@ -42,42 +42,57 @@ InModuleScope NavGit {
             $schemaKeys | Should -Be @($known['artifact'] | Sort-Object)
         }
 
-        It 'has defaults matching Get-NavGitDefaultConfig for <_>' -ForEach @('imageName', 'memoryLimit', 'dns', 'updateHosts', 'enableSymbolLoading', 'includeTestToolkit') {
-            $defaults = Get-NavGitDefaultConfig -UserSettings @{}
+        It 'has defaults matching Get-NAVGitDefaultConfig for <_>' -ForEach @('imageName', 'memoryLimit', 'dns', 'updateHosts', 'enableSymbolLoading', 'includeTestToolkit') {
+            $defaults = Get-NAVGitDefaultConfig -UserSettings @{}
             $schema.properties.$_.default | Should -Be $defaults[$_]
         }
 
-        It 'has the same default test object pattern as Get-NavGitDefaultConfig' {
-            $defaults = Get-NavGitDefaultConfig -UserSettings @{}
+        It 'has the same default test object pattern as Get-NAVGitDefaultConfig' {
+            $defaults = Get-NAVGitDefaultConfig -UserSettings @{}
             $schema.properties.testObjects.properties.versionListPattern.default | Should -Be $defaults.testObjects.versionListPattern
         }
     }
 
     Describe 'Commands.psd1 registry' {
         BeforeAll {
-            $commands = @(Get-NavGitCommandDefinition)
+            $commands = @(Get-NAVGitCommandDefinition)
         }
 
         It 'contains the planned commands' {
             $commands.Name | Should -Be @('BuildContainer', 'BuildAndUpdate', 'RemoveContainer', 'ImportTestToolkit',
-                'ImportObjects', 'ExportObjects', 'UpdateAddIns', 'StartDevEnv', 'StartClient', 'GetProfiles')
+                'ImportObjects', 'ExportObjects', 'CompileUncompiled', 'CompileModified', 'CompileAll', 'UpdateAddIns',
+                'StartDevEnv', 'StartClient', 'GetProfiles')
         }
 
-        It 'has unique names and functions' {
+        It 'has unique names and unique function + parameter combinations' {
             ($commands.Name | Sort-Object -Unique).Count | Should -Be $commands.Count
-            ($commands.Function | Sort-Object -Unique).Count | Should -Be $commands.Count
+            $combinations = $commands | ForEach-Object {
+                $parameters = ''
+                if ($_.ContainsKey('Parameters')) { $parameters = ($_.Parameters.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ';' }
+                "$($_.Function)|$parameters"
+            }
+            ($combinations | Sort-Object -Unique).Count | Should -Be $commands.Count
         }
 
-        It 'entry <Name> has all required fields' -ForEach (@(Get-NavGitCommandDefinition) | ForEach-Object { @{ Name = $_.Name; Entry = $_ } }) {
-            $Entry.Function | Should -Match '^[A-Z][a-z]+-NavGit[A-Za-z]+$'
+        It 'entry <Name> only uses fixed parameters the function accepts' -ForEach (@(Get-NAVGitCommandDefinition) | Where-Object { $_.ContainsKey('Parameters') } | ForEach-Object { @{ Name = $_.Name; Entry = $_ } }) {
+            $command = Get-Command -Name $Entry.Function -Module NAVGit -CommandType Function
+            foreach ($key in $Entry.Parameters.Keys) {
+                $command.Parameters.Keys | Should -Contain $key
+                $validValues = $command.Parameters[$key].Attributes | Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] } | ForEach-Object { $_.ValidValues }
+                if ($validValues) { $validValues | Should -Contain $Entry.Parameters[$key] }
+            }
+        }
+
+        It 'entry <Name> has all required fields' -ForEach (@(Get-NAVGitCommandDefinition) | ForEach-Object { @{ Name = $_.Name; Entry = $_ } }) {
+            $Entry.Function | Should -Match '^[A-Z][a-z]+-NAVGit[A-Za-z]+$'
             $Entry.Description | Should -Not -BeNullOrEmpty
             $Entry.RequiresElevation | Should -BeOfType [bool]
             $Entry.RequiresContainerHelper | Should -BeOfType [bool]
         }
 
-        It 'entry <Name> points to an exported function' -ForEach (@(Get-NavGitCommandDefinition) | ForEach-Object { @{ Name = $_.Name; Function = $_.Function } }) {
-            Get-Command -Name $Function -Module NavGit -CommandType Function | Should -Not -BeNullOrEmpty
-            (Get-Module NavGit).ExportedFunctions.Keys | Should -Contain $Function
+        It 'entry <Name> points to an exported function' -ForEach (@(Get-NAVGitCommandDefinition) | ForEach-Object { @{ Name = $_.Name; Function = $_.Function } }) {
+            Get-Command -Name $Function -Module NAVGit -CommandType Function | Should -Not -BeNullOrEmpty
+            (Get-Module NAVGit).ExportedFunctions.Keys | Should -Contain $Function
         }
 
         It 'does not require elevation for client commands' {
@@ -85,8 +100,8 @@ InModuleScope NavGit {
         }
 
         It 'returns a single entry by name and throws for an unknown name' {
-            (Get-NavGitCommandDefinition -Name 'ExportObjects').Function | Should -Be 'Export-NavGitObjects'
-            { Get-NavGitCommandDefinition -Name 'Nope' } | Should -Throw '*Unknown NavGit command*'
+            (Get-NAVGitCommandDefinition -Name 'ExportObjects').Function | Should -Be 'Export-NAVGitObjects'
+            { Get-NAVGitCommandDefinition -Name 'Nope' } | Should -Throw '*Unknown NAVGit command*'
         }
     }
 }

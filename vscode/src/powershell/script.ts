@@ -1,4 +1,4 @@
-// Builds the PowerShell command lines that run NavGit. No VS Code dependencies (unit tested).
+// Builds the PowerShell command lines that run NAVGit. No VS Code dependencies (unit tested).
 
 /** Quotes a value as a PowerShell single-quoted string. */
 export function quotePs(value: string): string {
@@ -11,14 +11,14 @@ export interface InvokeOptions {
     asJson?: boolean;
 }
 
-/** Import-Module line for the NavGit module. */
+/** Import-Module line for the NAVGit module. */
 export function importModuleLine(modulePath: string): string {
     return `Import-Module ${quotePs(modulePath)} -DisableNameChecking -Force`;
 }
 
-/** Invoke-NavGitCommand call for a registry command. */
+/** Invoke-NAVGitCommand call for a registry command. */
 export function invokeLine(psName: string, repository: string, options: InvokeOptions = {}): string {
-    const parts = ['Invoke-NavGitCommand', '-Name', psName, '-Repository', quotePs(repository)];
+    const parts = ['Invoke-NAVGitCommand', '-Name', psName, '-Repository', quotePs(repository)];
     if (options.force) {
         parts.push('-Force');
     }
@@ -45,7 +45,7 @@ export function backgroundScript(modulePath: string, body: string): string {
 /** Script for a separate elevated window: sets the title, imports the module and runs the command. */
 export function elevatedScript(modulePath: string, title: string, body: string): string {
     return [
-        `$Host.UI.RawUI.WindowTitle = ${quotePs(`NavGit - ${title}`)}`,
+        `$Host.UI.RawUI.WindowTitle = ${quotePs(`NAVGit - ${title}`)}`,
         importModuleLine(modulePath),
         body,
     ].join('; ');
@@ -77,7 +77,7 @@ export function backgroundArguments(script: string): string[] {
     return ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encodeCommand(script)];
 }
 
-/** Parses the JSON array written by Invoke-NavGitCommand -AsJson (tolerates an empty output). */
+/** Parses the JSON array written by Invoke-NAVGitCommand -AsJson (tolerates an empty output). */
 export function parseJsonArray<T>(stdout: string): T[] {
     const text = stdout.trim();
     if (!text) {
