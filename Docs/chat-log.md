@@ -43,7 +43,7 @@ The original request is also saved in [initialrequest.md](initialrequest.md). In
 - That flag goes to `New-BcImage -skipDatabase`, which builds a `-nodb` image.
 - With `--env bakfile=`, BcContainerHelper doesn't know about the backup, so every custom image gets Cronus baked in.
 - The artifact zip (including its `database\` folder) is always downloaded and cached; that can't be avoided.
-- Confirmed on this machine: the existing AdvaniaGIT container `Cryobank` runs on `custombuild:onprem-9.0.50357.0-na`.
+- Confirmed on this machine: the existing AdvaniaGIT container `Cronus` runs on `custombuild:onprem-9.0.50357.0-na`.
 
 ### Why test objects stay in Objects
 
@@ -105,7 +105,7 @@ When phase 7 was committed: 257 Pester tests and 19 extension tests passing.
 
 ## 5. Tested against real data
 
-Read-only checks against the running `Cryobank` container (NAV 2016) and `C:\Repos\NAV2016_CCB`:
+Read-only checks against the running `Cronus` container (NAV 2016) and `C:\Repos\NAV2016_CCB`:
 
 - **Artifacts:** NAV 2018 CU30 NO resolved to `11.0.43274.0/no`; BC14 to `14.53.50097.0/w1`.
 - **Container command (dry run):** `-bakFile`, `-imageName 'navgit'`, isolation and the remaining settings as
@@ -133,8 +133,8 @@ are only reported (`import.deleteMissing: warn`).
 3. Add-ins in the container and the Windows client after a build.
 4. In VS Code (after Reload Window): the commands, the elevated window and the profile list in *Start NAV Client...*.
 
-Note: the migrated `NAV2016_CCB` config uses the container name `Cryobank`, the same as the existing AdvaniaGIT
-container. Set `containerName` (e.g. `Cryobank-ng`) to keep the old one.
+Note: the migrated `NAV2016_CCB` config uses the container name `Cronus`, the same as the existing AdvaniaGIT
+container. Set `containerName` (e.g. `Cronus-ng`) to keep the old one.
 
 ## 7. Changes made outside the repository
 
@@ -142,7 +142,7 @@ container. Set `containerName` (e.g. `Cryobank-ng`) to keep the old one.
 - **Node.js 24.20.0 LTS** installed with winget.
 - **NavGit extension 0.1.0** installed in VS Code. The AdvaniaGIT extension is still installed; the command names
   don't clash.
-- Temporary files from testing are in the session scratchpad. A temporary `Cryobank` state file was removed again.
+- Temporary files from testing are in the session scratchpad. A temporary `Cronus` state file was removed again.
 
 ## 8. Follow-up: first real use, rename and compile commands (version 0.2.0)
 
@@ -182,7 +182,7 @@ Question: does anything prevent NAVGit from working with PowerShell 7? PowerShel
 everything was run under both versions:
 
 - **All 283 Pester tests pass on Windows PowerShell 5.1 and PowerShell 7.**
-- **Live, read-only checks under PowerShell 7 against the `Cryobank` container all worked:** BcContainerHelper 6.1.3,
+- **Live, read-only checks under PowerShell 7 against the `Cronus` container all worked:** BcContainerHelper 6.1.3,
   the artifact lookup, the container state, the `[Object]` query (9,012 objects), parsing an object header, the
   finsql arguments, the port check, and code page 850.
 - **`System.Data.SqlClient` is included in PowerShell 7** (4.6.1.6). A deliberately wrong `sa` password got "Login
