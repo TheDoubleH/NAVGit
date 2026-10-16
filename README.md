@@ -1,6 +1,6 @@
 # NAVGit
 
-<img src="assets/logo.png" alt="NAVGit logo" width="160">
+![NAVGit logo](assets/logo.png)
 
 A slim replacement for AdvaniaGIT: a PowerShell module and a VS Code extension for working with Dynamics NAV 2016,
 NAV 2017, NAV 2018 and Business Central 14 (C/AL) in Docker containers built with
@@ -22,7 +22,7 @@ What NAVGit does differently from AdvaniaGIT:
 ## Requirements
 
 - Windows with Docker (Windows containers)
-- Windows PowerShell 5.1
+- Windows PowerShell 5.1 or PowerShell 7 (both tested)
 - BcContainerHelper: `Install-Module BcContainerHelper -Scope AllUsers`
 - Container and object commands need an elevated (administrator) session; the client commands do not.
 

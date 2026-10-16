@@ -25,6 +25,6 @@ Open a repository with a `navgit.json` and run the commands from the Command Pal
 Container and object commands need administrator rights. When VS Code itself does not run as administrator they open
 a separate elevated PowerShell window (setting `navgit.runMode`). The client commands run without elevation.
 
-Requirements: Windows PowerShell 5.1, Docker, and the BcContainerHelper module (`Install-Module BcContainerHelper`).
+Requirements: Windows PowerShell 5.1 or PowerShell 7 (set `navgit.powershellPath` to `pwsh.exe`), Docker, and the BcContainerHelper module (`Install-Module BcContainerHelper`).
 
 `navgit.json` gets IntelliSense from the bundled schema.

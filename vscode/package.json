@@ -56,7 +56,7 @@
         "navgit.powershellPath": {
           "type": "string",
           "default": "powershell.exe",
-          "markdownDescription": "PowerShell executable. NAVGit targets Windows PowerShell 5.1 (`powershell.exe`)."
+          "markdownDescription": "PowerShell executable: `powershell.exe` (Windows PowerShell 5.1, default) or `pwsh.exe` (PowerShell 7). Both work."
         },
         "navgit.runMode": {
           "type": "string",

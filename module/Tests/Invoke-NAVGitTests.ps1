@@ -8,9 +8,14 @@
 #>
 [CmdletBinding()]
 param(
-    [string] $Path = $PSScriptRoot,
+    [string] $Path,
     [switch] $CI
 )
+
+# Not as a parameter default: Windows PowerShell 5.1 leaves $PSScriptRoot empty there when run with -File.
+if (-not $Path) {
+    $Path = $PSScriptRoot
+}
 
 $pester = Get-Module -Name Pester -ListAvailable |
     Where-Object { $_.Version -ge [version]'5.5.0' } |

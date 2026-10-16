@@ -7,7 +7,8 @@
     Copyright            = '(c) Henrik Helgesen. All rights reserved.'
     Description          = 'Git-based development workflow for Dynamics NAV 2016-2018 / Business Central 14 (C/AL) containers, built on BcContainerHelper.'
     PowerShellVersion    = '5.1'
-    CompatiblePSEditions = @('Desktop')
+    # Tested on Windows PowerShell 5.1 and PowerShell 7 (Windows only: Docker Windows containers, NAV client).
+    CompatiblePSEditions = @('Desktop', 'Core')
 
     # BcContainerHelper is deliberately NOT a RequiredModule: it is imported on demand
     # (Assert-NAVGitBcContainerHelper) so lightweight commands such as starting the client stay fast.

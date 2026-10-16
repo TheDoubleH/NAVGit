@@ -175,3 +175,27 @@ Changes requested and made:
 - **Version 0.2.0** of the module and the extension; the extension is reinstalled in VS Code.
 
 Tests: 283 Pester tests and 19 extension tests passing.
+
+## 9. PowerShell 7 check
+
+Question: does anything prevent NAVGit from working with PowerShell 7? PowerShell 7.6.7 was installed (winget) and
+everything was run under both versions:
+
+- **All 283 Pester tests pass on Windows PowerShell 5.1 and PowerShell 7.**
+- **Live, read-only checks under PowerShell 7 against the `Cryobank` container all worked:** BcContainerHelper 6.1.3,
+  the artifact lookup, the container state, the `[Object]` query (9,012 objects), parsing an object header, the
+  finsql arguments, the port check, and code page 850.
+- **`System.Data.SqlClient` is included in PowerShell 7** (4.6.1.6). A deliberately wrong `sa` password got "Login
+  failed for user 'sa'", so the profile list's host-side SQL connection reaches the container.
+- **The extension's background command line behaves the same with `powershell.exe` and `pwsh.exe`.**
+
+Changes:
+
+- **`CompatiblePSEditions` in the manifest is now `Desktop` and `Core`.**
+- **Docs and the `navgit.powershellPath` setting describe both versions.** Set it to `pwsh.exe` to use PowerShell 7
+  from VS Code.
+- **Bug fix in `Invoke-NAVGitTests.ps1`:** started with `powershell.exe -File` (as the VS Code test task does), Windows
+  PowerShell 5.1 leaves `$PSScriptRoot` empty in a parameter default, so no tests were found. This was not a
+  PowerShell 7 issue.
+
+Known difference, harmless: PowerShell 7's `ConvertFrom-Json` turns the state file's `savedAt` into a date.
