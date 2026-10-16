@@ -3,7 +3,7 @@
     ModuleVersion        = '0.2.0'
     GUID                 = '6f0f3c2e-7a4b-4d61-9a55-2f3e8c1d9b10'
     Author               = 'Henrik Helgesen'
-    CompanyName          = 'Helgesen Consulting'
+    CompanyName          = 'Helgesen Consulting, Inc.'
     Copyright            = '(c) Henrik Helgesen. All rights reserved.'
     Description          = 'Git-based development workflow for Dynamics NAV 2016-2018 / Business Central 14 (C/AL) containers, built on BcContainerHelper.'
     PowerShellVersion    = '5.1'
