@@ -1,5 +1,7 @@
 # NAVGit
 
+<img src="assets/logo.png" alt="NAVGit logo" width="160">
+
 A slim replacement for AdvaniaGIT: a PowerShell module and a VS Code extension for working with Dynamics NAV 2016,
 NAV 2017, NAV 2018 and Business Central 14 (C/AL) in Docker containers built with
 [BcContainerHelper](https://github.com/microsoft/navcontainerhelper).
