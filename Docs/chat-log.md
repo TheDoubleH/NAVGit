@@ -62,7 +62,7 @@ The original request is also saved in [initialrequest.md](initialrequest.md). In
 ## 3. Decisions
 
 | Question | Decision |
-|---|---|
+| --- | --- |
 | Versions | NAV 2016 (9.0), NAV 2017, NAV 2018, BC14 (C/AL). No artifacts exist for NAV 2015 or older. |
 | Configuration | A new `navgit.json` per repository, plus a migration from `setup.json`. |
 | Where object operations run | Inside the container, through BcContainerHelper (no finsql copied to the host). |
@@ -78,7 +78,7 @@ The approved plan is in `C:\Users\HenrikHelgesen\.claude\plans\i-need-you-to-tem
 ## 4. What was built, phase by phase
 
 | Phase | Commit | Contents |
-|---|---|---|
+| --- | --- | --- |
 | 1 | `10ff47a` | Module skeleton, `Commands.psd1` registry, `navgit.json` schema, config loading and validation, artifact/backup/license resolvers, Pester tests |
 | 2 | `b396c46` | `New-`, `Remove-`, `Show-NavGitContainerCommand`, `Update-NavGitContainerState`; native `-bakFile`; rejects duplicate raw docker arguments; encrypted credential and container state |
 | 3 | `6064428` | `Import-NavGitObjects`, `Export-NavGitObjects` (routes test objects), `Update-NavGitContainer` (Build and Update) |
