@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "navgit: build extension",
+            "type": "npm",
+            "script": "build",
+            "path": "vscode",
+            "group": "build",
+            "problemMatcher": "$esbuild"
+        },
+        {
+            "label": "navgit: test module",
+            "type": "shell",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ${workspaceFolder}/module/Tests/Invoke-NavGitTests.ps1",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "navgit: test extension",
+            "type": "npm",
+            "script": "test",
+            "path": "vscode",
+            "group": "test",
+            "problemMatcher": []
+        }
+    ]
+}

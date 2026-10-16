@@ -1,0 +1,84 @@
+{
+  "name": "navgit",
+  "displayName": "NavGit",
+  "description": "Git workflow for Dynamics NAV 2016-2018 / Business Central 14 (C/AL) containers: build containers, import and export objects, start the client and C/SIDE.",
+  "version": "0.1.0",
+  "publisher": "helgesen-consulting",
+  "license": "Unlicense",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "NAV",
+    "Dynamics NAV",
+    "Business Central",
+    "C/AL",
+    "BcContainerHelper"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/navgit.json",
+    "workspaceContains:**/setup.json"
+  ],
+  "contributes": {
+    "commands": [
+      { "command": "navgit.buildAndUpdateContainer", "title": "Build and Update Container", "category": "NavGit" },
+      { "command": "navgit.buildContainer", "title": "Build Container", "category": "NavGit" },
+      { "command": "navgit.removeContainer", "title": "Remove Container", "category": "NavGit" },
+      { "command": "navgit.importTestToolkit", "title": "Import Test Toolkit", "category": "NavGit" },
+      { "command": "navgit.importAllObjects", "title": "Import All GIT Objects to NAV", "category": "NavGit" },
+      { "command": "navgit.exportObjects", "title": "Export NAV objects to GIT", "category": "NavGit" },
+      { "command": "navgit.updateAddIns", "title": "Update Add-ins", "category": "NavGit" },
+      { "command": "navgit.startDevEnv", "title": "Start Development Environment (FinSql)", "category": "NavGit" },
+      { "command": "navgit.startClientDefault", "title": "Start NAV Client (default)", "category": "NavGit" },
+      { "command": "navgit.startClient", "title": "Start NAV Client...", "category": "NavGit" },
+      { "command": "navgit.createConfig", "title": "Create navgit.json", "category": "NavGit" }
+    ],
+    "configuration": {
+      "title": "NavGit",
+      "properties": {
+        "navgit.modulePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to the NavGit PowerShell module (folder or `NavGit.psd1`). Empty uses the module bundled with the extension."
+        },
+        "navgit.powershellPath": {
+          "type": "string",
+          "default": "powershell.exe",
+          "markdownDescription": "PowerShell executable. NavGit targets Windows PowerShell 5.1 (`powershell.exe`)."
+        },
+        "navgit.runMode": {
+          "type": "string",
+          "enum": ["auto", "terminal", "elevatedWindow"],
+          "default": "auto",
+          "markdownDescription": "Where container and object commands run. `auto`: the integrated terminal when VS Code runs as administrator, otherwise a separate elevated PowerShell window. `terminal`: always the integrated terminal. `elevatedWindow`: always a separate elevated window."
+        }
+      }
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": "navgit.json",
+        "url": "./resources/NavGit/Schema/navgit.schema.json"
+      }
+    ]
+  },
+  "scripts": {
+    "copy-module": "node scripts/copy-module.js",
+    "build": "npm run copy-module && node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test \"out-test/test/*.test.js\"",
+    "package": "vsce package --allow-missing-repository",
+    "vscode:prepublish": "npm run typecheck && npm run copy-module && node esbuild.js --production"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "~1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  }
+}
