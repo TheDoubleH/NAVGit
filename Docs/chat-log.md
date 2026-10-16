@@ -1,0 +1,145 @@
+# NavGit: development log
+
+How NavGit came about: what was asked, what was found, the decisions made and what was built. Date: 2026-10-15.
+Repository `C:\Repos\NAVGit`, branch `Development`.
+
+## 1. The request
+
+The original request is also saved in [initialrequest.md](initialrequest.md). In short:
+
+- AdvaniaGIT (`C:\AdvaniaGIT`) is abandoned. Build a new version that only has the commands that are actually used:
+  - Build and Update Container
+  - Build Container
+  - Remove Container
+  - Import Test Toolkit
+  - Import All GIT Objects to NAV
+  - Export NAV objects to GIT
+- Problem 1: test objects (`Test` in the Version List) do not end up in the `Tests` folder on export.
+- Problem 2 (the biggest): AdvaniaGIT pushes settings into docker `--env` arguments, so BcContainerHelper does not
+  handle them properly. Because of the backup file in particular, the image includes the Cronus demo database.
+- Task: understand BcContainerHelper (`c:\repos\navcontainerhelper`) and AdvaniaGIT (especially how it builds the
+  `New-NavContainer` command), then plan a PowerShell module plus a VS Code extension. Keep things split up so more
+  commands can be added later.
+
+## 2. Research findings
+
+### How AdvaniaGIT builds the container
+
+- Chain: `Start-CustomAction.ps1` → `Build-NavEnvironment.ps1` → `Start-DockerContainer.ps1` → `New-NavContainer`.
+- `Start-DockerContainer.ps1` passes the backup only as `--env bakfile="C:\Host\Log\<guid>\NAVBackup.bak"` inside
+  `-additionalParameters`, and sets `imageName = "custombuild"` together with `artifactUrl`.
+- Other quirks:
+  - `-restart no` together with `--restart always`;
+  - `doNotCheckHealth` passed twice;
+  - `dockerMemoryLimit` ignored;
+  - a hard-coded `--dns 8.8.8.8`;
+  - `$env:USERNAME` used instead of the configured user;
+  - the whole AdvaniaGIT folder mounted as `C:\Host`.
+
+### Why Cronus ends up in the image
+
+- BcContainerHelper only sets `$skipDatabase` when the native `-bakFile` parameter is used
+  (`New-NavContainer.ps1` L492-496).
+- That flag goes to `New-BcImage -skipDatabase`, which builds a `-nodb` image.
+- With `--env bakfile=`, BcContainerHelper doesn't know about the backup, so every custom image gets Cronus baked in.
+- The artifact zip (including its `database\` folder) is always downloaded and cached; that can't be avoided.
+- Confirmed on this machine: the existing AdvaniaGIT container `Cryobank` runs on `custombuild:onprem-9.0.50357.0-na`.
+
+### Why test objects stay in Objects
+
+- "Export NAV objects to GIT" (`ImportFrom-NAVtoGIT.ps1`) exports everything into `Objects` and never looks at the
+  Version List.
+- Only "Export NAV *Modified* objects" routes test objects, and its check (`IndexOf(",Test") -gt 0`) misses a Version
+  List that starts with `Test`.
+- On import, AdvaniaGIT never read `Tests\`. With `-MarkToDelete` it could even mark test objects as `#DELETE`.
+
+### Other findings
+
+- AdvaniaGIT runs finsql on the host after copying the RoleTailored Client out of the container.
+- The VS Code extension (`advaniagit.advaniagit` 1.1.3) only sends `Start-AdvaniaGITAction -Repository ... -ScriptName ...`
+  to a terminal.
+
+## 3. Decisions
+
+| Question | Decision |
+|---|---|
+| Versions | NAV 2016 (9.0), NAV 2017, NAV 2018, BC14 (C/AL). No artifacts exist for NAV 2015 or older. |
+| Configuration | A new `navgit.json` per repository, plus a migration from `setup.json`. |
+| Where object operations run | Inside the container, through BcContainerHelper (no finsql copied to the host). |
+| Backup file | An explicit `database.bakFile`; otherwise the AdvaniaGIT-style folder search. |
+| Extra commands (added after the first plan) | Start FinSql, Start NAV Client (default), Start NAV Client (choose profile). |
+| Isolation | Its own `isolation` setting in `navgit.json`. |
+| Add-Ins | Required: `paths.addIns` (default `Add-Ins`) plus an Update Add-ins command. |
+| Test toolkit | A separate Import Test Toolkit command, plus `includeTestToolkit: true` to import it while building. |
+| Extension tooling | Node.js LTS installed (winget); TypeScript + esbuild, packaged as a `.vsix`. |
+
+The approved plan is in `C:\Users\HenrikHelgesen\.claude\plans\i-need-you-to-temporal-hartmanis.md`.
+
+## 4. What was built, phase by phase
+
+| Phase | Commit | Contents |
+|---|---|---|
+| 1 | `10ff47a` | Module skeleton, `Commands.psd1` registry, `navgit.json` schema, config loading and validation, artifact/backup/license resolvers, Pester tests |
+| 2 | `b396c46` | `New-`, `Remove-`, `Show-NavGitContainerCommand`, `Update-NavGitContainerState`; native `-bakFile`; rejects duplicate raw docker arguments; encrypted credential and container state |
+| 3 | `6064428` | `Import-NavGitObjects`, `Export-NavGitObjects` (routes test objects), `Update-NavGitContainer` (Build and Update) |
+| 4 | `2ce4692` | `Import-NavGitTestToolkit`, `Invoke-NavGitCommand`, `New-NavGitConfig`, `ConvertFrom-AdvaniaGitSetup`, Add-Ins support, `Update-NavGitAddIns` |
+| 5 | `9d2c9fe` | `Start-NavGitDevelopmentEnvironment`, `Start-NavGitClient`, `Get-NavGitProfile`, plus fixes from testing against the real container |
+| 6 | `a6cc062` | VS Code extension (`vscode/`), installed in VS Code |
+| 7 | `0b9e494` | Repository [README](../README.md): configuration reference and AdvaniaGIT migration guide |
+
+When phase 7 was committed: 257 Pester tests and 19 extension tests passing.
+
+### Changes from the plan, made along the way
+
+- **BcContainerHelper is not a `RequiredModules` dependency.** It's imported only when a command needs it, so the
+  client commands stay fast.
+- **`navgit.json` is strict JSON.** Windows PowerShell 5.1 can't parse comments.
+- **The default test-object pattern is `(^|,)\s*Test`**, meaning a Version List entry that starts with "Test".
+- **The release name for BC14 is `BC14`** in backup file names; AdvaniaGIT had none. It can be overridden with
+  `navRelease`.
+- **"Import All" is simply the normal import.** NavGit always compares every file; `-Force` imports everything.
+- **No separate compile workaround.** BcContainerHelper already generates symbols when symbol loading is enabled.
+- **`import.dateFormat` was added**, because object file dates follow the container's locale.
+- **`ClientUserSettings.config` is not patched.** BcContainerHelper already prepares it on the host.
+- **The default export filter is empty (all objects), as in AdvaniaGIT.**
+
+## 5. Tested against real data
+
+Read-only checks against the running `Cryobank` container (NAV 2016) and `C:\Repos\NAV2016_CCB`:
+
+- **Artifacts:** NAV 2018 CU30 NO resolved to `11.0.43274.0/no`; BC14 to `14.53.50097.0/w1`.
+- **Container command (dry run):** `-bakFile`, `-imageName 'navgit'`, isolation and the remaining settings as
+  intended.
+- **Migration of `NAV2016_CCB\setup.json`:** artifact URL, license, NavUserPassword, hyperv, the SetupCertificate
+  script, the US test toolkit and `dateFormat` `M/d/yy` all carried over.
+- **Container state, the `[Object]` query (8,974 objects in 3 s) and the profile query** worked; the finsql arguments
+  came out correct.
+- **Comparing the 8,809 repository files with the database:** 8,719 unchanged, 0 unreadable dates. The only objects to
+  import were the 90 test objects that AdvaniaGIT had never imported.
+
+Fixes that came out of this:
+
+- **Bracketed object declarations** (`OBJECT [Table 50376 Name ]`, names with trailing spaces) are now parsed.
+- **System tables** are now compared instead of re-imported on every run.
+- **The default export filter was changed to "all objects"**, so the exported system table files are not deleted.
+
+Known and accepted: about 293 database objects aren't in Git, probably because exports skip unlicensed objects. They
+are only reported (`import.deleteMissing: warn`).
+
+## 6. Not tested yet (to do by hand)
+
+1. `Update-NavGitContainer` in an elevated shell; `docker images` should show a `-nodb` tag.
+2. `Export-NavGitObjects`: test objects move to `Tests\` (visible in `git status`).
+3. Add-ins in the container and the Windows client after a build.
+4. In VS Code (after Reload Window): the commands, the elevated window and the profile list in *Start NAV Client...*.
+
+Note: the migrated `NAV2016_CCB` config uses the container name `Cryobank`, the same as the existing AdvaniaGIT
+container. Set `containerName` (e.g. `Cryobank-ng`) to keep the old one.
+
+## 7. Changes made outside the repository
+
+- **Pester 6.2.0** installed for the current user (only 3.4 was present before).
+- **Node.js 24.20.0 LTS** installed with winget.
+- **NavGit extension 0.1.0** installed in VS Code. The AdvaniaGIT extension is still installed; the command names
+  don't clash.
+- Temporary files from testing are in the session scratchpad. A temporary `Cryobank` state file was removed again.
