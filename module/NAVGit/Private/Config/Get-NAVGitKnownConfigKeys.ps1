@@ -31,5 +31,6 @@ function Get-NAVGitKnownConfigKeys {
         'import'               = @('deleteMissing', 'syncSchema', 'compileFilter', 'dateFormat')
         'export'               = @('filter', 'format')
         'client'               = @('defaultProfile')
+        'showBcContainerCommand' = $null
     }
 }

@@ -32,9 +32,10 @@ function Get-NAVGitDefaultConfig {
         additionalParameters = @()
         paths                = @{ objects = 'Objects'; tests = 'Tests'; addIns = 'Add-Ins' }
         testObjects          = @{ versionListPattern = '(^|,)\s*Test'; includeTestCodeunits = $true }
-        import               = @{ deleteMissing = 'warn'; syncSchema = 'Force'; compileFilter = 'Compiled=0'; dateFormat = '' }
+        import               = @{ deleteMissing = 'skip'; syncSchema = 'Force'; compileFilter = 'Compiled=0'; dateFormat = '' }
         export               = @{ filter = ''; format = 'txt folder' }
         client               = @{ defaultProfile = '' }
+        showBcContainerCommand = ($UserSettings.showBcContainerCommand -eq $true)
     }
 }
 

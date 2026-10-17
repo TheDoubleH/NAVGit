@@ -185,7 +185,7 @@ function Assert-NAVGitConfig {
         Test-Bool 'testObjects.includeTestCodeunits' $Config.testObjects.includeTestCodeunits
     }
     if (Test-Object 'import' $Config.import) {
-        Test-Enum 'import.deleteMissing' $Config.import.deleteMissing @('warn', 'mark')
+        Test-Enum 'import.deleteMissing' $Config.import.deleteMissing @('skip', 'warn', 'mark')
         Test-Enum 'import.syncSchema' $Config.import.syncSchema @('Force', 'Yes', 'No')
         Test-String 'import.compileFilter' $Config.import.compileFilter -Required
         Test-String 'import.dateFormat' $Config.import.dateFormat
@@ -197,6 +197,9 @@ function Assert-NAVGitConfig {
     if (Test-Object 'client' $Config.client) {
         Test-String 'client.defaultProfile' $Config.client.defaultProfile
     }
+
+    # Output
+    Test-Bool 'showBcContainerCommand' $Config.showBcContainerCommand
 
     if ($errors.Count -gt 0) {
         $list = ($errors | ForEach-Object { "  - $_" }) -join [Environment]::NewLine

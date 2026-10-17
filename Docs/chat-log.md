@@ -199,3 +199,40 @@ Changes:
   PowerShell 7 issue.
 
 Known difference, harmless: PowerShell 7's `ConvertFrom-Json` turns the state file's `savedAt` into a date.
+
+## 10. First real container build, and two output flags
+
+`Invoke-NAVGitCommand -Name BuildAndUpdate` on `NAV2016_CCB` worked end to end (14.5 minutes, of which the image build
+took 12.5):
+
+- The image was built as `navgit:onprem-9.0.50357.0-na-nodb` ("Skipping restore of Cronus database"), and the
+  database came from `C:\AdvaniaGIT\Backup\2016-Cryobank.bak` through `-bakFile`.
+- The Add-Ins were mapped and copied, the license imported, and SetupCertificate.ps1 ran from `myScripts`.
+- Import: 77 objects imported, 8,642 unchanged, 90 test objects skipped (no `includeTestToolkit`), everything
+  compiled, ForceSync done.
+
+The first attempt hung while pulling the generic image from Microsoft's registry and was stopped by hand; the second
+run reused the layers already downloaded.
+
+Requested: less noise in the output.
+
+- **`showBcContainerCommand`** (default `false`): writes the full `New-BcContainer` command (credential hidden) to the
+  output before the container is built. It works in `navgit.json` and as a personal default in the user settings;
+  `navgit.json` wins.
+- **The list of objects that are in the database but not in Git** (in this database, 293 objects outside the license
+  range) is now controlled by **`import.deleteMissing`**. A separate `showMissingGitObjects` flag was tried first and
+  replaced by this single setting:
+  - `skip` (new default): only a count goes to the verbose output.
+  - `warn`: lists them as a warning.
+  - `mark`: sets their Version List to `#DELETE` and lists them.
+- **A `deleteMissing` in the user settings overrides the repository's `import.deleteMissing`.** This is the reverse of
+  the other user settings, which are only defaults.
+
+Also found: per-user modules are separate for Windows PowerShell and PowerShell 7. Pester had only been installed
+for 5.1, so it was installed for PowerShell 7 too, and the test runner's error message now names the edition.
+
+Tests: 297 Pester tests passing on Windows PowerShell 5.1 and PowerShell 7.
+
+Publisher: `vsce` rejected the display name `Henrik Helgesen` as `publisher`, because it must be an ID. The
+extension now uses the publisher ID `TheDoubleH` and `author: Henrik Helgesen`. The old `helgesen-consulting.navgit` was
+uninstalled and `TheDoubleH.navgit` installed.

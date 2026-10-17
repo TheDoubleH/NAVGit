@@ -368,6 +368,28 @@ InModuleScope NAVGit {
             Should -Invoke Set-NAVGitObjectsDeleted -Times 0 -Exactly
         }
 
+        It 'does not list objects missing in Git with deleteMissing = skip (default)' {
+            $config.import.deleteMissing | Should -Be 'skip'
+            $null = Import-NAVGitObjects -Path $repo -WarningVariable warnings -WarningAction SilentlyContinue -Verbose 4>&1 |
+                Tee-Object -Variable verbose | Out-Null
+            ($warnings -join ' ') | Should -Not -Match 'not in Git'
+            ($verbose -join ' ') | Should -Match "1 object\(s\) are in the database but not in Git \(set import.deleteMissing to 'warn'"
+            Should -Invoke Set-NAVGitObjectsDeleted -Times 0 -Exactly
+        }
+
+        It 'lists objects missing in Git with deleteMissing = warn' {
+            $config.import.deleteMissing = 'warn'
+            $null = Import-NAVGitObjects -Path $repo -WarningVariable warnings -WarningAction SilentlyContinue
+            ($warnings -join ' ') | Should -Match '1 object\(s\) are in the database but not in Git:'
+            ($warnings -join ' ') | Should -Match 'Table 99 Old'
+        }
+
+        It 'always lists objects it marks with deleteMissing = mark' {
+            $config.import.deleteMissing = 'mark'
+            $null = Import-NAVGitObjects -Path $repo -WarningVariable warnings -WarningAction SilentlyContinue
+            ($warnings -join ' ') | Should -Match "marked with Version List '#DELETE'"
+        }
+
         It 'marks missing objects with deleteMissing = mark' {
             $config.import.deleteMissing = 'mark'
             $null = Import-NAVGitObjects -Path $repo -WarningAction SilentlyContinue

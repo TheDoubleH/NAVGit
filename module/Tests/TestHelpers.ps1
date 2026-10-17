@@ -38,6 +38,8 @@ function New-TestUserSettings {
         defaultAuth              = ''
         defaultIsolation         = ''
         bcContainerHelperVersion = ''
+        showBcContainerCommand   = $false
+        deleteMissing            = ''
         settingsPath             = 'TestDrive:\settings.json'
     }
     foreach ($key in $Settings.Keys) { $result[$key] = $Settings[$key] }

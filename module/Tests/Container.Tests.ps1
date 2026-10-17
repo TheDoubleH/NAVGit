@@ -312,6 +312,18 @@ InModuleScope NAVGit {
             Should -Invoke Save-NAVGitContainerState -Times 1 -Exactly -ParameterFilter { $BackupPath -eq $bak }
         }
 
+        It 'does not write the New-BcContainer command by default' {
+            New-NAVGitContainer -Path $repo
+            Should -Invoke Write-Host -Times 0 -Exactly -ParameterFilter { "$Object" -match '^New-BcContainer' }
+        }
+
+        It 'writes the New-BcContainer command with showBcContainerCommand' {
+            $repo = New-TestRepository -Config @{ database = @{ bakFile = $bak }; isolation = 'process'; showBcContainerCommand = $true }
+            New-NAVGitContainer -Path $repo
+            Should -Invoke Write-Host -Times 1 -Exactly -ParameterFilter { "$Object" -match "^New-BcContainer" -and "$Object" -match '-bakFile' -and "$Object" -notmatch 'P@ssw0rd' }
+            Should -Invoke New-BcContainer -Times 1 -Exactly
+        }
+
         It 'does not create anything with -WhatIf' {
             New-NAVGitContainer -Path $repo -WhatIf
 

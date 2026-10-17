@@ -133,7 +133,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "deleteMissing": { "type": "string", "enum": ["warn", "mark"], "default": "warn", "description": "Objects in the database but not in Git: warn only, or mark their Version List as #DELETE." },
+        "deleteMissing": { "type": "string", "enum": ["skip", "warn", "mark"], "default": "skip", "description": "Objects in the database but not in Git (usually outside the license range): 'skip' only writes a count to the verbose output, 'warn' lists them, 'mark' sets their Version List to #DELETE and lists them. A deleteMissing in the user settings overrides this." },
         "syncSchema": { "type": "string", "enum": ["Force", "Yes", "No"], "default": "Force", "description": "SynchronizeSchemaChanges used for import and compile." },
         "compileFilter": { "type": "string", "minLength": 1, "default": "Compiled=0", "description": "C/SIDE filter for objects compiled after import." },
         "dateFormat": { "type": "string", "default": "", "description": "Format of Date in the object files, e.g. 'dd.MM.yy' or 'MM/dd/yy'. Empty: derived from the separator ('.' dd.MM.yy, '-' dd-MM-yy, '/' MM/dd/yy). Only used to detect changed objects." }
@@ -153,6 +153,11 @@
       "properties": {
         "defaultProfile": { "type": "string", "default": "", "description": "Profile ID used by 'Start NAV Client (default)'. Empty opens the default role center." }
       }
+    },
+    "showBcContainerCommand": {
+      "type": "boolean",
+      "default": false,
+      "description": "Write the full New-BcContainer command (credential hidden) to the output before a container is built. Default: user setting showBcContainerCommand, otherwise false."
     }
   }
 }

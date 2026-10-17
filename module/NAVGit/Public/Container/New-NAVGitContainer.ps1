@@ -48,6 +48,10 @@ function New-NAVGitContainer {
         }
     }
 
+    if ($config.showBcContainerCommand) {
+        Write-Host (Format-NAVGitContainerCommand -Parameters $plan.Parameters)
+    }
+
     Write-NAVGitLog "Creating container '$($config.containerName)'" -Level Step
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $parameters = $plan.Parameters

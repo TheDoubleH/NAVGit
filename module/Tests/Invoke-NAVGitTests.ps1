@@ -22,7 +22,8 @@ $pester = Get-Module -Name Pester -ListAvailable |
     Sort-Object -Property Version -Descending |
     Select-Object -First 1
 if (-not $pester) {
-    throw 'Pester 5.5 or later is required: Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser -SkipPublisherCheck'
+    # Per-user modules are separate for Windows PowerShell and PowerShell 7, so install in the edition you run.
+    throw "Pester 5.5 or later is required in PowerShell $($PSVersionTable.PSVersion): Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser -SkipPublisherCheck"
 }
 Import-Module $pester -Force
 

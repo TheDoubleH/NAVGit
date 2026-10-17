@@ -100,7 +100,7 @@ InModuleScope NAVGit {
             $config.imageName | Should -Be 'navgit'
             $config.updateHosts | Should -BeTrue
             $config.paths.objects | Should -Be 'Objects'
-            $config.import.deleteMissing | Should -Be 'warn'
+            $config.import.deleteMissing | Should -Be 'skip'
             $config.repositoryPath | Should -Be $repo
             $config.objectsPath | Should -Be (Join-Path $repo 'Objects')
             $config.testsPath | Should -Be (Join-Path $repo 'Tests')
@@ -144,6 +144,66 @@ InModuleScope NAVGit {
             It 'rejects an invalid isolation' {
                 $repo = New-TestRepository -Config @{ isolation = 'vm' }
                 { Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings) } | Should -Throw "*'isolation' must be one of*"
+            }
+        }
+
+        Context 'showBcContainerCommand' {
+            It 'defaults to false' {
+                (Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings)).showBcContainerCommand | Should -BeFalse
+            }
+
+            It 'takes the user setting as default' {
+                (Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings @{ showBcContainerCommand = $true })).showBcContainerCommand | Should -BeTrue
+            }
+
+            It 'lets navgit.json win over the user setting' {
+                $repo = New-TestRepository -Config @{ showBcContainerCommand = $false }
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ showBcContainerCommand = $true })).showBcContainerCommand | Should -BeFalse
+            }
+
+            It 'rejects non-boolean values' {
+                $repo = New-TestRepository -Config @{ showBcContainerCommand = 'yes' }
+                { Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings) } | Should -Throw "*'showBcContainerCommand' must be true or false*"
+            }
+
+            It 'is read as a boolean from the user settings file' {
+                $path = Join-Path $TestDrive 'flag-settings.json'
+                Set-Content -LiteralPath $path -Value '{ "showBcContainerCommand": true }'
+                $settings = Get-NAVGitUserSettings -Path $path
+                $settings.showBcContainerCommand | Should -BeOfType [bool]
+                $settings.showBcContainerCommand | Should -BeTrue
+
+                Set-Content -LiteralPath $path -Value '{ "showBcContainerCommand": "yes" }'
+                { Get-NAVGitUserSettings -Path $path } | Should -Throw '*showBcContainerCommand must be true or false*'
+            }
+        }
+
+        Context 'import.deleteMissing' {
+            It 'defaults to skip' {
+                (Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings)).import.deleteMissing | Should -Be 'skip'
+            }
+
+            It 'uses navgit.json' {
+                $repo = New-TestRepository -Config @{ import = @{ deleteMissing = 'warn' } }
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).import.deleteMissing | Should -Be 'warn'
+            }
+
+            It 'is overridden by the user setting, also when navgit.json sets it' {
+                $repo = New-TestRepository -Config @{ import = @{ deleteMissing = 'mark' } }
+                $config = Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ deleteMissing = 'skip' })
+                $config.import.deleteMissing | Should -Be 'skip'
+
+                $config = Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings @{ deleteMissing = 'warn' })
+                $config.import.deleteMissing | Should -Be 'warn'
+            }
+
+            It 'rejects unknown values in navgit.json and in the user settings' {
+                $repo = New-TestRepository -Config @{ import = @{ deleteMissing = 'delete' } }
+                { Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings) } | Should -Throw "*'import.deleteMissing' must be one of 'skip', 'warn', 'mark'*"
+
+                $path = Join-Path $TestDrive 'delete-settings.json'
+                Set-Content -LiteralPath $path -Value '{ "deleteMissing": "delete" }'
+                { Get-NAVGitUserSettings -Path $path } | Should -Throw '*deleteMissing must be*'
             }
         }
 

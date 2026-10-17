@@ -42,6 +42,12 @@ function Get-NAVGitConfig {
 
     Assert-NAVGitConfig -Config $config -RepoConfig $repoConfig -ConfigPath $configPath
 
+    # A personal deleteMissing wins over the repository's (the other user settings are only defaults).
+    if ($UserSettings.deleteMissing -and $UserSettings.deleteMissing -ne $config.import.deleteMissing) {
+        Write-NAVGitLog "import.deleteMissing '$($config.import.deleteMissing)' is overridden by the user setting '$($UserSettings.deleteMissing)'." -Level Detail
+        $config.import.deleteMissing = $UserSettings.deleteMissing
+    }
+
     $config.repositoryPath = $repositoryPath
     $config.configPath = $configPath
     $config.objectsPath = Join-Path $repositoryPath $config.paths.objects

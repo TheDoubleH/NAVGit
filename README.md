@@ -141,13 +141,14 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 | `paths.addIns` | `Add-Ins` | .NET add-ins. When the folder exists it is mapped to `c:\run\Add-ins` and copied to the service tier and Windows client. `""` disables it. |
 | `testObjects.versionListPattern` | `(^\|,)\s*Test` | Case-insensitive regular expression on the Version List that marks test objects. |
 | `testObjects.includeTestCodeunits` | `true` | Also treat codeunits with `Subtype=Test` as test objects. |
-| `import.deleteMissing` | `warn` | Objects in the database but not in Git: `warn`, or `mark` (Version List `#DELETE`, as AdvaniaGIT did). |
+| `import.deleteMissing` | `skip` | Objects in the database but not in Git (usually outside the license range): `skip` only writes a count to the verbose output, `warn` lists them, `mark` sets their Version List to `#DELETE` (as AdvaniaGIT did) and lists them. A `deleteMissing` in the user settings overrides this. |
 | `import.syncSchema` | `Force` | `SynchronizeSchemaChanges` for import and compile: `Force`, `Yes`, `No`. |
 | `import.compileFilter` | `Compiled=0` | Objects compiled after an import. |
 | `import.dateFormat` | `""` | Date format in the object files, e.g. `M/d/yy` or `dd.MM.yy`. Empty: from the separator (`.` dd.MM.yy, `-` dd-MM-yy, `/` MM/dd/yy). An unreadable date only means that object is re-imported. |
 | `export.filter` | `""` | C/SIDE filter for the export; empty exports all objects. Only a full export removes files of deleted objects. |
 | `export.format` | `txt folder` | Export format. |
 | `client.defaultProfile` | `""` | Profile opened by *Start NAV Client (default)*; empty opens the default role center. |
+| `showBcContainerCommand` | user setting, else `false` | Write the full `New-BcContainer` command (credential hidden) to the output before building. |
 
 ## User settings
 
@@ -159,7 +160,9 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
   "licenseFolder": "C:\\AdvaniaGIT\\License",
   "defaultAuth": "NavUserPassword",
   "defaultIsolation": "hyperv",
-  "bcContainerHelperVersion": ""
+  "bcContainerHelperVersion": "",
+  "showBcContainerCommand": false,
+  "deleteMissing": ""
 }
 ```
 
@@ -169,6 +172,8 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 - `licenseFolder`: used for relative `licenseFile` values.
 - `defaultAuth` / `defaultIsolation`: used when `navgit.json` has no `auth` / `isolation`.
 - `bcContainerHelperVersion`: pin a BcContainerHelper version.
+- `showBcContainerCommand`: personal default; `navgit.json` wins when it sets it.
+- `deleteMissing`: `skip`, `warn` or `mark`. When set, it **overrides** `import.deleteMissing` in every repository's `navgit.json`; empty uses the repository's setting.
 
 ## Where NAVGit keeps things
 
@@ -211,8 +216,8 @@ as in AdvaniaGIT) and writes `navgit.json`. Run it with `-WhatIf` first to see t
 Behaviour differences worth knowing:
 
 - AdvaniaGIT never imported the `Tests` folder; NAVGit does when `includeTestToolkit` is set, so the first import adds your test objects. Without it, changed test objects are skipped with a warning (they are still read, so they are never treated as deleted).
-- Objects your license cannot export (`ExportTxtSkipUnlicensed`) are in the database but not in Git; the import lists
-  them as "not in Git" and leaves them alone (`import.deleteMissing: warn`).
+- Objects your license cannot export (`ExportTxtSkipUnlicensed`) are in the database but not in Git. The import leaves
+  them alone; by default (`import.deleteMissing: skip`) only a count goes to the verbose output, `warn` lists them.
 - AdvaniaGIT containers are not known to the client commands until you run `Update-NAVGitContainerState` once
   (elevated) in the repository.
 - Not ported: deltas (`storeAllObjects: false`), FTP backups, PasswordState, CI/AL build pipelines.
@@ -232,7 +237,7 @@ vscode/               VS Code extension (TypeScript)
 Tests:
 
 ```powershell
-.\module\Tests\Invoke-NAVGitTests.ps1          # Pester 5.5+ (Install-Module Pester -Scope CurrentUser -SkipPublisherCheck)
+.\module\Tests\Invoke-NAVGitTests.ps1          # Pester 5.5+, installed per edition: Install-Module Pester -Scope CurrentUser -SkipPublisherCheck
 cd vscode; npm test                            # extension unit tests
 ```
 

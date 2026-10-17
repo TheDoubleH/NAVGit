@@ -5,8 +5,10 @@ function Import-NAVGitObjects {
     .DESCRIPTION
         Every object file in the repository (Objects and Tests) is compared with the database on Version List,
         Modified, Date and Time. New and changed objects are imported in one finsql run, then uncompiled objects are
-        compiled and the schema is force-synchronized. Objects in the database that are not in Git are reported
-        (import.deleteMissing = 'warn') or marked with Version List '#DELETE' ('mark').
+        compiled and the schema is force-synchronized. Objects in the database that are not in Git (usually objects
+        outside the license range) are handled by import.deleteMissing: 'skip' (default) only writes a count to the
+        verbose output, 'warn' lists them, 'mark' sets their Version List to '#DELETE' and lists them. A deleteMissing
+        in the user settings overrides the repository's.
         Test objects (the Tests folder) need the test toolkit, so they are only imported when includeTestToolkit is
         set in navgit.json, or with -IncludeTests. They are always read, so they never count as missing.
     .PARAMETER Path
@@ -71,12 +73,18 @@ function Import-NAVGitObjects {
     $missing = @($comparison.Missing | Where-Object { $_.VersionList -ne '#DELETE' })
     if ($missing.Count -gt 0) {
         $list = ($missing | Select-Object -First 25 | ForEach-Object { "  $($_.Type) $($_.Id) $($_.Name)" }) -join [Environment]::NewLine
-        if ($config.import.deleteMissing -eq 'mark') {
-            Set-NAVGitObjectsDeleted -ContainerName $context.ContainerName -Objects $missing
-            Write-NAVGitLog "$($missing.Count) object(s) are not in Git and were marked with Version List '#DELETE':$([Environment]::NewLine)$list" -Level Warning
-        }
-        else {
-            Write-NAVGitLog "$($missing.Count) object(s) are in the database but not in Git:$([Environment]::NewLine)$list" -Level Warning
+        switch ($config.import.deleteMissing) {
+            'mark' {
+                Set-NAVGitObjectsDeleted -ContainerName $context.ContainerName -Objects $missing
+                Write-NAVGitLog "$($missing.Count) object(s) are not in Git and were marked with Version List '#DELETE':$([Environment]::NewLine)$list" -Level Warning
+            }
+            'warn' {
+                Write-NAVGitLog "$($missing.Count) object(s) are in the database but not in Git:$([Environment]::NewLine)$list" -Level Warning
+            }
+            default {
+                # Usually objects outside the license range that can't be exported; not worth a warning on every import.
+                Write-NAVGitLog "$($missing.Count) object(s) are in the database but not in Git (set import.deleteMissing to 'warn' to list them)." -Level Detail
+            }
         }
     }
 

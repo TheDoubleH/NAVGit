@@ -3,7 +3,10 @@
   "displayName": "NAVGit",
   "description": "Git workflow for Dynamics NAV 2016-2018 / Business Central 14 (C/AL) containers: build containers, import and export objects, start the client and C/SIDE.",
   "version": "0.2.0",
-  "publisher": "Henrik Helgesen",
+  "publisher": "TheDoubleH",
+  "author": {
+    "name": "Henrik Helgesen"
+  },
   "license": "Unlicense",
   "icon": "images/icon.png",
   "galleryBanner": {
