@@ -7,6 +7,26 @@ Describe 'NAVGit module' {
         { Test-ModuleManifest -Path (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -ErrorAction Stop } | Should -Not -Throw
     }
 
+    It 'lists exactly the Public functions in FunctionsToExport' {
+        $manifest = Import-PowerShellDataFile -Path (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1')
+        $publicFunctions = @(Get-ChildItem -Path (Join-Path $PSScriptRoot '..\NAVGit\Public') -Filter '*.ps1' -Recurse | ForEach-Object { $_.BaseName } | Sort-Object)
+        @($manifest.FunctionsToExport | Sort-Object) | Should -Be $publicFunctions
+    }
+
+    It 'has the same version as the VS Code extension' {
+        $manifest = Import-PowerShellDataFile -Path (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1')
+        $package = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\..\vscode\package.json') -Raw | ConvertFrom-Json
+        $manifest.ModuleVersion | Should -Be $package.version
+    }
+
+    It 'has the PowerShell Gallery metadata' {
+        $manifest = Import-PowerShellDataFile -Path (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1')
+        $manifest.Description | Should -Not -BeNullOrEmpty
+        $manifest.Author | Should -Not -BeNullOrEmpty
+        $manifest.PrivateData.PSData.ProjectUri | Should -Match '^https://'
+        $manifest.PrivateData.PSData.LicenseUri | Should -Match '^https://'
+    }
+
     It 'does not import BcContainerHelper on load' {
         Remove-Module BcContainerHelper -ErrorAction SilentlyContinue
         Import-Module (Join-Path $PSScriptRoot '..\NAVGit\NAVGit.psd1') -Force

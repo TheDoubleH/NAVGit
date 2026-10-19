@@ -77,6 +77,35 @@ export function backgroundArguments(script: string): string[] {
     return ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encodeCommand(script)];
 }
 
+/** Result written (as JSON) by installModuleScript. */
+export interface ModuleInstallResult {
+    Name: string;
+    Action: 'Installed' | 'Updated';
+    Version: string;
+    Path: string;
+    BcContainerHelper: boolean;
+}
+
+/**
+ * Script that installs a module from the PowerShell Gallery for the current user, or updates it when it was installed
+ * from the Gallery before, without any prompt (it runs hidden). Prepares Windows PowerShell 5.1 first: TLS 1.2 and
+ * the NuGet provider. Writes a ModuleInstallResult as JSON; errors end the script with exit code 1.
+ */
+export function installModuleScript(name: string): string {
+    const quoted = quotePs(name);
+    return [
+        "$ErrorActionPreference = 'Stop'",
+        "$ProgressPreference = 'SilentlyContinue'",
+        '[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12',
+        "if ($PSVersionTable.PSEdition -ne 'Core' -and -not (Get-PackageProvider -ListAvailable | Where-Object { $_.Name -eq 'NuGet' -and $_.Version -ge [version]'2.8.5.201' })) { $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Scope CurrentUser -Force }",
+        `$installed = Get-InstalledModule -Name ${quoted} -ErrorAction SilentlyContinue`,
+        `if ($installed) { Update-Module -Name ${quoted} -Force; $action = 'Updated' } else { Install-Module -Name ${quoted} -Repository PSGallery -Scope CurrentUser -Force -AllowClobber; $action = 'Installed' }`,
+        `$module = Get-InstalledModule -Name ${quoted}`,
+        "$bcContainerHelper = [bool](Get-Module -Name BcContainerHelper -ListAvailable)",
+        "ConvertTo-Json -Compress -InputObject ([ordered]@{ Name = $module.Name; Action = $action; Version = [string]$module.Version; Path = [string]$module.InstalledLocation; BcContainerHelper = $bcContainerHelper })",
+    ].join('; ');
+}
+
 /** Parses the JSON array written by Invoke-NAVGitCommand -AsJson (tolerates an empty output). */
 export function parseJsonArray<T>(stdout: string): T[] {
     const text = stdout.trim();

@@ -1,0 +1,47 @@
+# Runs the Pester tests (Windows PowerShell 5.1 and PowerShell 7) and the extension unit tests.
+# Also called by release.yml before anything is published.
+name: CI
+
+on:
+  push:
+    branches: [main, Development]
+  pull_request:
+  workflow_call:
+
+jobs:
+  module:
+    name: Module tests (${{ matrix.shell }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v6
+
+      # Per-user modules are separate for each edition, so Pester is installed in the edition that runs the tests.
+      - name: Install Pester
+        run: Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser -Force -SkipPublisherCheck
+
+      - name: Run Pester tests
+        run: .\module\Tests\Invoke-NAVGitTests.ps1 -CI
+
+  extension:
+    name: Extension tests
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: vscode
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test

@@ -1,0 +1,94 @@
+# Publishes a release when a version tag is pushed:
+#   git tag v1.0.1; git push origin v1.0.1
+# The tag must match ModuleVersion in module/NAVGit/NAVGit.psd1 and "version" in vscode/package.json.
+#
+# Authentication:
+#   PowerShell Gallery  repository secret PSGALLERY_API_KEY, from https://www.powershellgallery.com/account/apikeys
+#                       (scope: push new packages and versions, glob pattern NAVGit).
+#   VS Code Marketplace no secret: vsce --oidc (trusted publishing) exchanges this workflow's GitHub OIDC token for a
+#                       short-lived Marketplace token. Configure a trusted publishing policy for this repository and
+#                       release.yml on the TheDoubleH publisher at https://marketplace.visualstudio.com/manage.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  version:
+    name: Check versions
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Compare tag, module and extension versions
+        run: |
+          $tag = '${{ github.ref_name }}'.TrimStart('v')
+          $module = (Import-PowerShellDataFile -Path module/NAVGit/NAVGit.psd1).ModuleVersion
+          $extension = (Get-Content -LiteralPath vscode/package.json -Raw | ConvertFrom-Json).version
+          "Tag $tag, module $module, extension $extension"
+          if ($module -ne $tag -or $extension -ne $tag) {
+              throw "Version mismatch: set ModuleVersion and package.json version to $tag before tagging."
+          }
+
+  test:
+    name: Tests
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  publish-module:
+    name: Publish to the PowerShell Gallery
+    needs: test
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v6
+
+      # Only module/NAVGit is published (not the tests).
+      - name: Publish NAVGit
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: Publish-PSResource -Path module/NAVGit -Repository PSGallery -ApiKey $env:PSGALLERY_API_KEY
+
+  publish-extension:
+    name: Publish to the VS Code Marketplace
+    needs: test
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      id-token: write   # lets vsce request the OIDC token for trusted publishing
+    defaults:
+      run:
+        working-directory: vscode
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22   # vsce 4 needs Node 22 or later
+
+      - run: npm ci
+
+      # vscode:prepublish type-checks, copies the module into the extension and bundles it.
+      # --oidc never falls back to a PAT: without a trusted publishing policy this step fails.
+      - name: Publish extension
+        run: npx vsce publish --oidc
+
+  github-release:
+    name: Create GitHub release
+    needs: [publish-module, publish-extension]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" --title "NAVGit ${{ github.ref_name }}" --generate-notes

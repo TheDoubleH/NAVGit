@@ -19,6 +19,8 @@ What NAVGit does differently from AdvaniaGIT:
   Time) and imports only what changed, then compiles and force-syncs.
 - **The client and C/SIDE start without elevation** and without copying the client out of the container.
 
+Full documentation, including every `navgit.json` and user setting with its accepted values, is in [Docs](Docs/README.md).
+
 ## Requirements
 
 - Windows with Docker (Windows containers)
@@ -28,22 +30,24 @@ What NAVGit does differently from AdvaniaGIT:
 
 ## Installation
 
-PowerShell module (from this repository):
+PowerShell module, from the [PowerShell Gallery](https://www.powershellgallery.com/packages/NAVGit):
 
 ```powershell
-Import-Module C:\Repos\NAVGit\module\NAVGit\NAVGit.psd1
+Install-Module NAVGit -Scope CurrentUser    # later: Update-Module NAVGit
 ```
 
-To have it available everywhere, copy `module\NAVGit` to a folder in `$env:PSModulePath`
-(e.g. `C:\Program Files\WindowsPowerShell\Modules\NAVGit`).
+Or run *NAVGit: Install PowerShell Module* in VS Code. To use the module from a clone of this repository instead:
+`Import-Module C:\Repos\NAVGit\module\NAVGit\NAVGit.psd1`.
 
-VS Code extension (bundles the module):
+VS Code extension (bundles the module): install **NAVGit** from the
+[Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=TheDoubleH.navgit), or run
+`code --install-extension TheDoubleH.navgit`. To build it from source:
 
 ```powershell
 cd C:\Repos\NAVGit\vscode
 npm install
 npm run package
-code --install-extension navgit-0.2.0.vsix
+code --install-extension navgit-1.0.0.vsix
 ```
 
 ## Quick start
@@ -251,4 +255,24 @@ Adding a command:
 2. Add an entry to `module\NAVGit\Commands.psd1` (name, function, elevation, BcContainerHelper). Several entries
    can share one function with different fixed `Parameters` (as the three compile commands do).
 3. Add an entry to `vscode\src\commands\registry.ts` and to `contributes.commands` in `vscode\package.json`.
-4. The tests check that the three lists match.
+4. Add the function name to `FunctionsToExport` in `module\NAVGit\NAVGit.psd1`.
+5. The tests check that the lists match.
+
+Releasing (GitHub Actions, [.github/workflows/release.yml](.github/workflows/release.yml)):
+
+1. Set the same version in `ModuleVersion` (`module\NAVGit\NAVGit.psd1`) and `version` (`vscode\package.json`).
+2. Commit, then tag and push: `git tag v1.0.1; git push origin v1.0.1`.
+3. The workflow checks the versions, runs all tests, publishes the module to the PowerShell Gallery and the
+   extension to the VS Code Marketplace, and creates a GitHub release.
+
+One-time setup:
+
+- **PowerShell Gallery**: create an API key that can push `NAVGit` and store it as the repository secret
+  `PSGALLERY_API_KEY`. Gallery keys expire after at most a year; renew it before then.
+- **VS Code Marketplace**: no secret. The workflow uses `vsce publish --oidc` (trusted publishing), which swaps the
+  workflow's GitHub OIDC token for a short-lived Marketplace token. Add a trusted publishing policy for this
+  repository and `release.yml` to the `TheDoubleH` publisher in the
+  [Marketplace management portal](https://marketplace.visualstudio.com/manage). This replaces Azure DevOps personal
+  access tokens, which stop working for publishing when global PATs are retired on 1 December 2026.
+
+Published versions can't be replaced, only unlisted, so a failed publish needs a new version number.

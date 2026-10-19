@@ -2,12 +2,17 @@
   "name": "navgit",
   "displayName": "NAVGit",
   "description": "Git workflow for Dynamics NAV 2016-2018 / Business Central 14 (C/AL) containers: build containers, import and export objects, start the client and C/SIDE.",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "publisher": "TheDoubleH",
   "author": {
     "name": "Henrik Helgesen"
   },
   "license": "Unlicense",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheDoubleH/NAVGit.git",
+    "directory": "vscode"
+  },
   "icon": "images/icon.png",
   "galleryBanner": {
     "color": "#0B2A5B",
@@ -46,7 +51,8 @@
       { "command": "navgit.startDevEnv", "title": "Start Development Environment (FinSql)", "category": "NAVGit" },
       { "command": "navgit.startClientDefault", "title": "Start NAV Client (default)", "category": "NAVGit" },
       { "command": "navgit.startClient", "title": "Start NAV Client...", "category": "NAVGit" },
-      { "command": "navgit.createConfig", "title": "Create navgit.json", "category": "NAVGit" }
+      { "command": "navgit.createConfig", "title": "Create navgit.json", "category": "NAVGit" },
+      { "command": "navgit.installModule", "title": "Install PowerShell Module", "category": "NAVGit" }
     ],
     "configuration": {
       "title": "NAVGit",
@@ -82,13 +88,13 @@
     "watch": "node esbuild.js --watch",
     "typecheck": "tsc --noEmit",
     "test": "tsc -p tsconfig.test.json && node --test \"out-test/test/*.test.js\"",
-    "package": "vsce package --allow-missing-repository",
+    "package": "vsce package",
     "vscode:prepublish": "npm run typecheck && npm run copy-module && node esbuild.js --production"
   },
   "devDependencies": {
     "@types/node": "^20.17.0",
     "@types/vscode": "~1.85.0",
-    "@vscode/vsce": "^3.2.0",
+    "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.24.0",
     "typescript": "^5.6.0"
   }
