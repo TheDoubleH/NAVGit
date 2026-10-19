@@ -2,16 +2,16 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import { test } from 'node:test';
-import { createConfigCommandId, navGitCommands, sortProfiles } from '../src/commands/registry';
+import { createConfigCommandId, installModuleCommandId, navGitCommands, sortProfiles } from '../src/commands/registry';
 
 // Compiled to out-test/test, so the project root is two levels up.
 const root = path.resolve(__dirname, '..', '..');
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const commandsPsd1 = fs.readFileSync(path.resolve(root, '..', 'module', 'NAVGit', 'Commands.psd1'), 'utf8');
 
-test('package.json contributes exactly the registry commands plus Create navgit.json', () => {
+test('package.json contributes exactly the registry commands plus Create navgit.json and Install PowerShell Module', () => {
     const contributed = packageJson.contributes.commands.map((command: { command: string }) => command.command).sort();
-    const expected = [...navGitCommands.map((command) => command.id), createConfigCommandId].sort();
+    const expected = [...navGitCommands.map((command) => command.id), createConfigCommandId, installModuleCommandId].sort();
     assert.deepStrictEqual(contributed, expected);
 });
 

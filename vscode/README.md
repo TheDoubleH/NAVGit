@@ -21,6 +21,7 @@ Open a repository with a `navgit.json` and run the commands from the Command Pal
 | Start NAV Client (default) | Opens the Windows client on the default role center |
 | Start NAV Client... | Lets you pick a profile, then opens the Windows client |
 | Create navgit.json | Creates `navgit.json`, or converts an AdvaniaGIT `setup.json` |
+| Install PowerShell Module | Installs or updates the NAVGit module from the PowerShell Gallery, to use it outside VS Code |
 
 Container and object commands need administrator rights. When VS Code itself does not run as administrator they open
 a separate elevated PowerShell window (setting `navgit.runMode`). The client commands run without elevation.

@@ -1,9 +1,17 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { NAVGitRunner } from '../powershell/runner';
-import { invokeLine, parseJsonArray, quotePs } from '../powershell/script';
+import { installModuleScript, invokeLine, ModuleInstallResult, parseJsonArray, quotePs } from '../powershell/script';
 import { configFileName, findAdvaniaGitRepositories, findRepositories } from '../workspace/findRepo';
-import { createConfigCommandId, NAVGitCommand, navGitCommands, NAVGitProfile, sortProfiles } from './registry';
+import {
+    createConfigCommandId,
+    galleryModuleName,
+    installModuleCommandId,
+    NAVGitCommand,
+    navGitCommands,
+    NAVGitProfile,
+    sortProfiles,
+} from './registry';
 
 export function registerCommands(context: vscode.ExtensionContext, runner: NAVGitRunner, output: vscode.OutputChannel): void {
     for (const command of navGitCommands) {
@@ -13,7 +21,45 @@ export function registerCommands(context: vscode.ExtensionContext, runner: NAVGi
     }
     context.subscriptions.push(
         vscode.commands.registerCommand(createConfigCommandId, () => runSafely(output, 'Create navgit.json', () => createConfig(runner))),
+        vscode.commands.registerCommand(installModuleCommandId, () => runSafely(output, 'Install PowerShell Module', () => installModule(runner))),
     );
+}
+
+/**
+ * Installs (or updates) the NAVGit module from the PowerShell Gallery for the current user, so it can be used from any
+ * PowerShell session. The extension itself keeps using its bundled copy (or navgit.modulePath).
+ */
+async function installModule(runner: NAVGitRunner): Promise<void> {
+    const result = await installFromGallery(runner, galleryModuleName);
+    const message = `NAVGit: ${result.Action.toLowerCase()} the ${result.Name} module ${result.Version} for ${runner.powershellPath}. Use it in any PowerShell session with Import-Module ${result.Name}.`;
+    if (result.BcContainerHelper) {
+        void vscode.window.showInformationMessage(message);
+        return;
+    }
+
+    const install = 'Install BcContainerHelper';
+    const answer = await vscode.window.showWarningMessage(`${message} BcContainerHelper, which the container commands need, is not installed.`, install);
+    if (answer === install) {
+        const helper = await installFromGallery(runner, 'BcContainerHelper');
+        void vscode.window.showInformationMessage(`NAVGit: ${helper.Action.toLowerCase()} BcContainerHelper ${helper.Version}.`);
+    }
+}
+
+async function installFromGallery(runner: NAVGitRunner, name: string): Promise<ModuleInstallResult> {
+    const result = await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: `NAVGit: installing ${name} from the PowerShell Gallery` },
+        () => runner.runScript(`Install ${name}`, installModuleScript(name)),
+    );
+    if (result.exitCode !== 0) {
+        throw new Error(result.stderr.trim() || `Installing ${name} failed (exit code ${result.exitCode}).`);
+    }
+    // Install-Module warnings can end up on stdout; the result is the last line.
+    const lastLine = result.stdout.trim().split(/\r?\n/).pop() ?? '';
+    const parsed = lastLine.startsWith('{') ? parseJsonArray<ModuleInstallResult>(lastLine) : [];
+    if (parsed.length === 0) {
+        throw new Error(`Installing ${name} returned no result.`);
+    }
+    return parsed[0];
 }
 
 async function runSafely(output: vscode.OutputChannel, title: string, action: () => Promise<void>): Promise<void> {

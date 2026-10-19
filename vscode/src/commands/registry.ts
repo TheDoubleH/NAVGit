@@ -46,8 +46,12 @@ export const navGitCommands: readonly NAVGitCommand[] = [
     { id: 'navgit.startClient', title: 'Start NAV Client...', psName: 'StartClient', mode: 'background', pickProfile: true },
 ];
 
-/** Command that is handled by the extension itself instead of the registry. */
+/** Commands that are handled by the extension itself instead of the registry. */
 export const createConfigCommandId = 'navgit.createConfig';
+export const installModuleCommandId = 'navgit.installModule';
+
+/** Name of the module on the PowerShell Gallery. */
+export const galleryModuleName = 'NAVGit';
 
 export interface NAVGitProfile {
     Id: string;

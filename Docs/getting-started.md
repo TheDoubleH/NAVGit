@@ -11,14 +11,22 @@ Supported versions: Dynamics NAV 2016 (9.0), NAV 2017 (10.0), NAV 2018 (11.0), B
 
 ## Install
 
-PowerShell module:
+PowerShell module, from the [PowerShell Gallery](https://www.powershellgallery.com/packages/NAVGit):
 
 ```powershell
-Import-Module C:\Repos\NAVGit\module\NAVGit\NAVGit.psd1
+Install-Module NAVGit -Scope CurrentUser
+Install-Module BcContainerHelper -Scope CurrentUser    # if you don't have it yet
 ```
 
-To have it available in every session, copy `module\NAVGit` to a folder in `$env:PSModulePath`, for example
-`C:\Program Files\WindowsPowerShell\Modules\NAVGit`.
+Update later with `Update-Module NAVGit`. Windows PowerShell 5.1 and PowerShell 7 keep per-user modules in separate
+folders, so install in the edition you use (or in both). `-Scope AllUsers` installs for every user but needs an
+elevated session.
+
+You can also run *NAVGit: Install PowerShell Module* in VS Code, which does the same for the PowerShell set in
+`navgit.powershellPath`.
+
+To work on NAVGit itself, import the module from a clone instead:
+`Import-Module C:\Repos\NAVGit\module\NAVGit\NAVGit.psd1`.
 
 VS Code extension: install **NAVGit** from the
 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=TheDoubleH.navgit)

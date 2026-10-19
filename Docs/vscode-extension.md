@@ -83,6 +83,7 @@ All commands are in the category **NAVGit**.
 | Start NAV Client (default) | `Start-NAVGitClient` | hidden background process | opens `client.defaultProfile` or the default role center |
 | Start NAV Client... | `Start-NAVGitClient -ProfileId <id>` | hidden background process | shows a profile picker first |
 | Create navgit.json | `New-NAVGitConfig` / `ConvertFrom-AdvaniaGitSetup` | hidden background process | see below |
+| Install PowerShell Module | `Install-Module NAVGit` / `Update-Module NAVGit` | hidden background process | see below |
 
 Background commands show progress in the status bar; their output and errors go to the *NAVGit* output channel, and
 errors are also shown as a notification.
@@ -100,6 +101,21 @@ errors are also shown as a notification.
 - Starting empty asks for the version (NAV 2016, 2017, 2018 or Business Central 14) and the localization, then runs
   `New-NAVGitConfig`.
 - The new file opens in the editor; migration notes are shown as a warning.
+
+### Install PowerShell Module
+
+The extension always uses its bundled module (or `navgit.modulePath`). This command installs the module from the
+PowerShell Gallery so you can also use NAVGit from your own PowerShell sessions, outside VS Code.
+
+- Installs `NAVGit` for the current user (no elevation needed), or updates it if it was installed from the Gallery
+  before.
+- Uses the PowerShell set in `navgit.powershellPath`. Windows PowerShell 5.1 and PowerShell 7 keep per-user modules
+  in separate folders, so switch the setting and run the command again to install for the other edition.
+- On Windows PowerShell 5.1 it first enables TLS 1.2 and installs the NuGet package provider if needed.
+- If BcContainerHelper is missing, it offers to install that too (current user).
+
+Afterwards, `Import-Module NAVGit` works in any session (PowerShell also loads it automatically when you run one of
+its commands).
 
 ## IntelliSense for navgit.json
 

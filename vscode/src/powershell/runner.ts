@@ -96,9 +96,17 @@ export class NAVGitRunner implements vscode.Disposable {
     /** Runs a script in a hidden PowerShell process and returns its output. */
     runBackground(title: string, body: string, token?: vscode.CancellationToken): Promise<BackgroundResult> {
         this.assertModule();
-        const script = backgroundScript(this.modulePath, body);
         this.output.appendLine(`> ${title}: ${body}`);
+        return this.runHidden(backgroundScript(this.modulePath, body), token);
+    }
 
+    /** Runs a complete script in a hidden PowerShell process, without importing the NAVGit module. */
+    runScript(title: string, script: string, token?: vscode.CancellationToken): Promise<BackgroundResult> {
+        this.output.appendLine(`> ${title}: ${script}`);
+        return this.runHidden(script, token);
+    }
+
+    private runHidden(script: string, token?: vscode.CancellationToken): Promise<BackgroundResult> {
         return new Promise((resolve) => {
             const child = execFile(
                 this.powershellPath,

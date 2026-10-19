@@ -4,6 +4,7 @@ import {
     backgroundArguments,
     backgroundScript,
     encodeCommand,
+    installModuleScript,
     invokeLine,
     parseJsonArray,
     quotePs,
@@ -34,6 +35,16 @@ test('backgroundScript imports the module and exits with the command exit code',
     const script = backgroundScript('C:\\ext\\NAVGit.psd1', 'Invoke-NAVGitCommand -Name GetProfiles');
     assert.match(script, /Import-Module 'C:\\ext\\NAVGit\.psd1' -DisableNameChecking -Force/);
     assert.match(script, /Invoke-NAVGitCommand -Name GetProfiles; exit \$LASTEXITCODE$/);
+});
+
+test('installModuleScript installs or updates for the current user without prompting', () => {
+    const script = installModuleScript('NAVGit');
+    assert.match(script, /Get-InstalledModule -Name 'NAVGit' -ErrorAction SilentlyContinue/);
+    assert.match(script, /Install-Module -Name 'NAVGit' -Repository PSGallery -Scope CurrentUser -Force/);
+    assert.match(script, /Update-Module -Name 'NAVGit' -Force/);
+    assert.match(script, /Install-PackageProvider -Name NuGet/);
+    assert.match(script, /ConvertTo-Json/);
+    assert.doesNotMatch(script, /Import-Module/);
 });
 
 test('encodeCommand round-trips as UTF-16LE base64', () => {

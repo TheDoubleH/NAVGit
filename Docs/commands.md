@@ -1,10 +1,12 @@
 # PowerShell command reference
 
-Import the module:
+Install the module once (see [Getting started](getting-started.md#install)):
 
 ```powershell
-Import-Module C:\Repos\NAVGit\module\NAVGit\NAVGit.psd1
+Install-Module NAVGit -Scope CurrentUser
 ```
+
+PowerShell loads it automatically when you run one of its commands; `Import-Module NAVGit` loads it explicitly.
 
 Every command takes `-Path`: the repository folder, or any folder or file inside it. The default is the current
 folder. `Get-Help <command> -Full` shows the built-in help.
