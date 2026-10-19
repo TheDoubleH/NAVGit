@@ -22,7 +22,7 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Compare tag, module and extension versions
         run: |
@@ -47,7 +47,7 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Only module/NAVGit is published (not the tests).
       - name: Publish NAVGit
@@ -66,9 +66,9 @@ jobs:
       run:
         working-directory: vscode
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22   # vsce 4 needs Node 22 or later
 
@@ -86,7 +86,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Create release
         env:

@@ -20,7 +20,7 @@ jobs:
       run:
         shell: ${{ matrix.shell }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Per-user modules are separate for each edition, so Pester is installed in the edition that runs the tests.
       - name: Install Pester
@@ -36,9 +36,9 @@ jobs:
       run:
         working-directory: vscode
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
 
