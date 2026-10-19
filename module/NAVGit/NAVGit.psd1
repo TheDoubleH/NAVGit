@@ -1,6 +1,6 @@
 @{
     RootModule           = 'NAVGit.psm1'
-    ModuleVersion        = '0.2.0'
+    ModuleVersion        = '1.0.0.0'
     GUID                 = '6f0f3c2e-7a4b-4d61-9a55-2f3e8c1d9b10'
     Author               = 'Henrik Helgesen'
     CompanyName          = 'Helgesen Consulting, Inc.'

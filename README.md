@@ -43,7 +43,7 @@ VS Code extension (bundles the module):
 cd C:\Repos\NAVGit\vscode
 npm install
 npm run package
-code --install-extension navgit-0.2.0.vsix
+code --install-extension navgit-1.0.0.vsix
 ```
 
 ## Quick start
