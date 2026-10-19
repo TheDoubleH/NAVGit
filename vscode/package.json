@@ -1,0 +1,95 @@
+{
+  "name": "navgit",
+  "displayName": "NAVGit",
+  "description": "Git workflow for Dynamics NAV 2016-2018 / Business Central 14 (C/AL) containers: build containers, import and export objects, start the client and C/SIDE.",
+  "version": "0.2.0",
+  "publisher": "TheDoubleH",
+  "author": {
+    "name": "Henrik Helgesen"
+  },
+  "license": "Unlicense",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#0B2A5B",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "NAV",
+    "Dynamics NAV",
+    "Business Central",
+    "C/AL",
+    "BcContainerHelper"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/navgit.json",
+    "workspaceContains:**/setup.json"
+  ],
+  "contributes": {
+    "commands": [
+      { "command": "navgit.buildAndUpdateContainer", "title": "Build and Update Container", "category": "NAVGit" },
+      { "command": "navgit.buildContainer", "title": "Build Container", "category": "NAVGit" },
+      { "command": "navgit.removeContainer", "title": "Remove Container", "category": "NAVGit" },
+      { "command": "navgit.importTestToolkit", "title": "Import Test Toolkit", "category": "NAVGit" },
+      { "command": "navgit.importAllObjects", "title": "Import All GIT Objects to NAV", "category": "NAVGit" },
+      { "command": "navgit.exportObjects", "title": "Export NAV objects to GIT", "category": "NAVGit" },
+      { "command": "navgit.compileUncompiled", "title": "Compile Uncompiled Objects", "category": "NAVGit" },
+      { "command": "navgit.compileModified", "title": "Compile Modified Objects", "category": "NAVGit" },
+      { "command": "navgit.compileAll", "title": "Compile All Objects", "category": "NAVGit" },
+      { "command": "navgit.updateAddIns", "title": "Update Add-ins", "category": "NAVGit" },
+      { "command": "navgit.startDevEnv", "title": "Start Development Environment (FinSql)", "category": "NAVGit" },
+      { "command": "navgit.startClientDefault", "title": "Start NAV Client (default)", "category": "NAVGit" },
+      { "command": "navgit.startClient", "title": "Start NAV Client...", "category": "NAVGit" },
+      { "command": "navgit.createConfig", "title": "Create navgit.json", "category": "NAVGit" }
+    ],
+    "configuration": {
+      "title": "NAVGit",
+      "properties": {
+        "navgit.modulePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to the NAVGit PowerShell module (folder or `NAVGit.psd1`). Empty uses the module bundled with the extension."
+        },
+        "navgit.powershellPath": {
+          "type": "string",
+          "default": "powershell.exe",
+          "markdownDescription": "PowerShell executable: `powershell.exe` (Windows PowerShell 5.1, default) or `pwsh.exe` (PowerShell 7). Both work."
+        },
+        "navgit.runMode": {
+          "type": "string",
+          "enum": ["auto", "terminal", "elevatedWindow"],
+          "default": "auto",
+          "markdownDescription": "Where container and object commands run. `auto`: the integrated terminal when VS Code runs as administrator, otherwise a separate elevated PowerShell window. `terminal`: always the integrated terminal. `elevatedWindow`: always a separate elevated window."
+        }
+      }
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": "navgit.json",
+        "url": "./resources/NAVGit/Schema/navgit.schema.json"
+      }
+    ]
+  },
+  "scripts": {
+    "copy-module": "node scripts/copy-module.js",
+    "build": "npm run copy-module && node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test \"out-test/test/*.test.js\"",
+    "package": "vsce package --allow-missing-repository",
+    "vscode:prepublish": "npm run typecheck && npm run copy-module && node esbuild.js --production"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "~1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  }
+}
