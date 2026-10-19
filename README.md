@@ -19,6 +19,8 @@ What NAVGit does differently from AdvaniaGIT:
   Time) and imports only what changed, then compiles and force-syncs.
 - **The client and C/SIDE start without elevation** and without copying the client out of the container.
 
+Full documentation, including every `navgit.json` and user setting with its accepted values, is in [Docs](Docs/README.md).
+
 ## Requirements
 
 - Windows with Docker (Windows containers)
@@ -37,7 +39,9 @@ Import-Module C:\Repos\NAVGit\module\NAVGit\NAVGit.psd1
 To have it available everywhere, copy `module\NAVGit` to a folder in `$env:PSModulePath`
 (e.g. `C:\Program Files\WindowsPowerShell\Modules\NAVGit`).
 
-VS Code extension (bundles the module):
+VS Code extension (bundles the module): install **NAVGit** from the
+[Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=TheDoubleH.navgit), or run
+`code --install-extension TheDoubleH.navgit`. To build it from source:
 
 ```powershell
 cd C:\Repos\NAVGit\vscode
