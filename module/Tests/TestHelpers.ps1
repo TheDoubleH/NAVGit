@@ -35,12 +35,13 @@ function New-TestUserSettings {
     $result = @{
         backupFolder             = ''
         licenseFolder            = ''
-        defaultAuth              = ''
-        defaultIsolation         = ''
         bcContainerHelperVersion = ''
-        showBcContainerCommand   = $false
+        auth                     = ''
+        isolation                = ''
+        showBcContainerCommand   = $null
         deleteMissing            = ''
         containerName            = ''
+        artifact                 = $null
         settingsPath             = 'TestDrive:\settings.json'
     }
     foreach ($key in $Settings.Keys) { $result[$key] = $Settings[$key] }

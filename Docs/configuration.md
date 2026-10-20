@@ -14,6 +14,8 @@ everyone working on the repository builds the same container.
       - [`navRelease`](#navrelease)
     - [Artifact](#artifact)
       - [`artifact` (required)](#artifact-required)
+        - [Form 1: explicit URL](#form-1-explicit-url)
+        - [Form 2: NAV release (resolved with `Get-NavArtifactUrl`)](#form-2-nav-release-resolved-with-get-navartifacturl)
     - [Image](#image)
       - [`imageName`](#imagename)
     - [Database](#database)
@@ -69,9 +71,10 @@ For the per-user file (`%APPDATA%\NAVGit\settings.json`) see [user-settings.md](
 3. The file is **deep-merged over the defaults**: nested objects are merged key by key, so
    `"import": { "deleteMissing": "warn" }` keeps the defaults for the other `import` settings. Arrays are
    *replaced*, not merged.
-4. Some defaults come from the [user settings](user-settings.md) (`auth`, `isolation`, `showBcContainerCommand`).
-   A value written in `navgit.json` always wins over them, with one exception: a `deleteMissing` in the user
-   settings overrides `import.deleteMissing`.
+4. The [user settings](user-settings.md) override `navgit.json`: `auth`, `isolation`, `showBcContainerCommand`,
+   `import.deleteMissing` (user `deleteMissing`), `containerName` and `artifact` (user `artifact.url`). A user
+   setting that is set always wins; an empty one leaves the repository's value alone. The overrides are applied
+   after `navgit.json` has been validated, so the file must be valid on its own.
 5. The merged result is validated. All problems are collected and reported together in one error. Unknown keys
    (usually typos) are **not** errors: they produce a warning such as
    `navgit.json: unknown setting 'isolaton' is ignored.`
@@ -161,7 +164,7 @@ Every setting, with its default value (except where noted):
 | `database.searchNames` | string[] | | `[]` | any strings |
 | `licenseFile` | string | | `""` (demo license) | absolute path, relative path, or `http(s)://` URL; `{major}` placeholder |
 | `auth` | string | | see [auth](#auth) | `Windows`, `NavUserPassword` |
-| `isolation` | string | | user `defaultIsolation`, else `""` | `""`, `hyperv`, `process` |
+| `isolation` | string | | `""` | `""`, `hyperv`, `process` |
 | `memoryLimit` | string | | `""` | `""` or number + `M`/`G`: `8G`, `4096M`, `7.5G` |
 | `dns` | string | | `""` | an IP address, `hostDNS`, or `""` |
 | `updateHosts` | boolean | | `true` | `true`, `false` |
@@ -183,7 +186,7 @@ Every setting, with its default value (except where noted):
 | `export.filter` | string | | `""` (all objects) | C/SIDE filter |
 | `export.format` | string | | `txt folder` | `txt folder` |
 | `client.defaultProfile` | string | | `""` | a Profile ID, or `""` |
-| `showBcContainerCommand` | boolean | | user setting, else `false` | `true`, `false` |
+| `showBcContainerCommand` | boolean | | `false` | `true`, `false` |
 
 Booleans must be JSON `true` / `false`; the strings `"true"` / `"false"` are rejected. Version numbers
 (`artifact.nav`, `artifact.version`) must be **strings**: `"2018"`, not `2018`.
@@ -259,10 +262,10 @@ Set it only when your backup folder uses a different naming scheme. Any string i
 Which BcContainerHelper artifact (NAV/BC build and localization) the container is built from. Use **exactly one**
 of three forms; NAVGit decides the form from which of `url`, `nav` or `version` is present.
 
-**Form 1: explicit URL**
+##### Form 1: explicit URL
 
 ```json
-"artifact": { "url": "https://bcartifacts.azureedge.net/onprem/11.0.48560.0/no" }
+"artifact": { "url": "https://bcartifacts-exdbf9fwegejdqak.b02.azurefd.net/onprem/9.0.50357.0/na" }
 ```
 
 | Key | Rules |
@@ -271,10 +274,10 @@ of three forms; NAVGit decides the form from which of `url`, `nav` or `version` 
 
 `cu`, `country`, `type` and `select` cannot be combined with `url`; the URL already identifies the artifact.
 
-**Form 2: NAV release (resolved with `Get-NavArtifactUrl`)**
+##### Form 2: NAV release (resolved with `Get-NavArtifactUrl`)
 
 ```json
-"artifact": { "nav": "2018", "cu": "cu30", "country": "no" }
+"artifact": { "nav": "2016", "cu": "cu32", "country": "na" }
 ```
 
 | Key | Accepted values | Default |
@@ -303,6 +306,9 @@ Business Central 13/14 are not available in this form; use form 3.
 
 Whatever the form, the resolved artifact must be version 9 (NAV 2016) to 14 (BC14); anything else stops the build.
 There are no artifacts before NAV 2016, and C/AL ends with BC14.
+
+An `artifact.url` in the [user settings](user-settings.md#artifact) **wins** over this setting and replaces it
+completely. The `artifact` here must still be valid.
 
 ### Image
 
@@ -396,11 +402,12 @@ How users log in to the NAV service tier.
 | `Windows` | Windows authentication with your current Windows account. |
 | `NavUserPassword` | User name and password. The password is also the SQL `sa` password inside the container, which NAVGit uses for imports, exports and the profile list. |
 
-Default, in order: the user setting `defaultAuth`; otherwise `NavUserPassword` when you are signed in with an
-Azure AD (Entra ID) account (`%USERDOMAIN%` is `AzureAD`); otherwise `Windows`.
+Default: `NavUserPassword` when you are signed in with an Azure AD (Entra ID) account (`%USERDOMAIN%` is
+`AzureAD`); otherwise `Windows`. An `auth` in the [user settings](user-settings.md#auth) **wins** over this one.
 
 Windows authentication does not work inside a container for Azure AD accounts. If `auth` is `Windows` on such a
-machine, NAVGit uses `NavUserPassword` anyway and warns; set `auth` to `NavUserPassword` to silence the warning.
+machine, NAVGit uses `NavUserPassword` anyway and warns; set `auth` to `NavUserPassword` here or in your user
+settings to silence the warning.
 
 The credential is asked for once and stored encrypted; see [How it works](how-it-works.md#credentials).
 
@@ -414,8 +421,7 @@ Docker isolation mode, passed to `New-BcContainer -isolation`.
 | `hyperv` | Hyper-V isolation. |
 | `process` | Process isolation (host and image Windows versions must match). |
 
-Default: the user setting `defaultIsolation`, otherwise `""`. An explicit `""` in `navgit.json` wins over the user
-setting.
+Default: `""`. An `isolation` in the [user settings](user-settings.md#isolation) **wins** over this one.
 
 #### `memoryLimit`
 
@@ -642,8 +648,8 @@ center. *Start NAV Client…* (picker) and `Start-NAVGitClient -ProfileId` ignor
 `true` writes the full `New-BcContainer` command (credential masked) to the output before the container is built.
 Useful for checking what is passed to BcContainerHelper or for reproducing a build by hand.
 
-Default: the user setting `showBcContainerCommand`, otherwise `false`. A value in `navgit.json` wins over the user
-setting.
+Default: `false`. A `showBcContainerCommand` in the [user settings](user-settings.md#showbccontainercommand)
+**wins** over this one, whether it is `true` or `false`.
 
 `Show-NAVGitContainerCommand` shows the same command at any time without building.
 

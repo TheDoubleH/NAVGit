@@ -5,7 +5,7 @@ BeforeDiscovery {
 InModuleScope NAVGit {
     BeforeAll {
         . (Join-Path $PSScriptRoot 'TestHelpers.ps1')
-        $defaultTestObjects = (Get-NAVGitDefaultConfig -UserSettings @{}).testObjects
+        $defaultTestObjects = (Get-NAVGitDefaultConfig).testObjects
 
         function New-TestFolder([string] $Prefix = 'f') {
             $path = Join-Path $TestDrive ("$Prefix-" + [guid]::NewGuid().ToString('N').Substring(0, 8))

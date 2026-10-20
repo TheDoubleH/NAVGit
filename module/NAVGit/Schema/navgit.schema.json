@@ -120,12 +120,12 @@
     "auth": {
       "type": "string",
       "enum": ["Windows", "NavUserPassword"],
-      "description": "Container authentication. Default: user setting defaultAuth, otherwise NavUserPassword on Azure AD joined machines and Windows elsewhere."
+      "description": "Container authentication. Default: NavUserPassword on Azure AD joined machines and Windows elsewhere. auth in the user settings wins."
     },
     "isolation": {
       "type": "string",
       "enum": ["", "hyperv", "process"],
-      "description": "Container isolation (New-BcContainer -isolation). Empty lets BcContainerHelper choose. Default: user setting defaultIsolation, otherwise empty."
+      "description": "Container isolation (New-BcContainer -isolation). Empty lets BcContainerHelper choose. Default: empty. isolation in the user settings wins."
     },
     "memoryLimit": {
       "type": "string",
@@ -198,7 +198,7 @@
     "showBcContainerCommand": {
       "type": "boolean",
       "default": false,
-      "description": "Write the full New-BcContainer command (credential hidden) to the output before a container is built. Default: user setting showBcContainerCommand, otherwise false."
+      "description": "Write the full New-BcContainer command (credential hidden) to the output before a container is built. Default: false. showBcContainerCommand in the user settings wins."
     }
   }
 }

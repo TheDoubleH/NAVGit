@@ -63,12 +63,12 @@ InModuleScope NAVGit {
         }
 
         It 'has defaults matching Get-NAVGitDefaultConfig for <_>' -ForEach @('imageName', 'memoryLimit', 'dns', 'updateHosts', 'enableSymbolLoading', 'includeTestToolkit') {
-            $defaults = Get-NAVGitDefaultConfig -UserSettings @{}
+            $defaults = Get-NAVGitDefaultConfig
             $schema.properties.$_.default | Should -Be $defaults[$_]
         }
 
         It 'has the same default test object pattern as Get-NAVGitDefaultConfig' {
-            $defaults = Get-NAVGitDefaultConfig -UserSettings @{}
+            $defaults = Get-NAVGitDefaultConfig
             $schema.properties.testObjects.properties.versionListPattern.default | Should -Be $defaults.testObjects.versionListPattern
         }
     }

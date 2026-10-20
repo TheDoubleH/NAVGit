@@ -1,7 +1,14 @@
 # User settings (settings.json)
 
 The user settings hold what differs per developer machine, not per repository: where backups and licenses are kept,
-personal defaults, and a BcContainerHelper version pin. They are never committed to Git.
+personal overrides, and a BcContainerHelper version pin. They are never committed to Git.
+
+**A user setting that is set always wins over `navgit.json`.** `navgit.json` is still validated as written, so it
+stays valid for colleagues who do not have your settings. An empty (or missing) user setting leaves the repository's
+value alone. With `-Verbose` NAVGit reports each value it overrides.
+
+Overrides apply to every repository on the machine. A personal `artifact` or `auth` therefore affects all your
+NAVGit repositories, not just the one you were working in.
 
 ## Location
 
@@ -15,14 +22,15 @@ The file is optional. When it does not exist, every setting has its default.
 
 ```json
 {
-  "backupFolder": "C:\\AdvaniaGIT\\Backup",
-  "licenseFolder": "C:\\AdvaniaGIT\\License",
-  "defaultAuth": "NavUserPassword",
-  "defaultIsolation": "hyperv",
+  "backupFolder": "C:\\NAVGIT\\Backup",
+  "licenseFolder": "C:\\NAVGIT\\License",
+  "auth": "NavUserPassword",
+  "isolation": "hyperv",
   "bcContainerHelperVersion": "",
   "showBcContainerCommand": false,
   "deleteMissing": "",
-  "containerName": { "branch": { "prefix": "MIS", "length": 8 } }
+  "containerName": { "branch": { "prefix": "MIS", "length": 8 } },
+  "artifact": { "url": "https://bcartifacts.blob.core.windows.net/onprem/9.0.50357.0/na" }
 }
 ```
 
@@ -32,12 +40,16 @@ The file is optional. When it does not exist, every setting has its default.
 | --- | --- | --- | --- | --- |
 | `backupFolder` | string | `""` | a folder path | Searched for backups; base for relative `database.bakFile` |
 | `licenseFolder` | string | `""` | a folder path | Base for relative `licenseFile` |
-| `defaultAuth` | string | `""` | `""`, `Windows`, `NavUserPassword` | Default for `auth` |
-| `defaultIsolation` | string | `""` | `""`, `hyperv`, `process` | Default for `isolation` |
 | `bcContainerHelperVersion` | string | `""` | `""` or an installed version, e.g. `6.0.30` | Pins the BcContainerHelper version |
-| `showBcContainerCommand` | boolean | `false` | `true`, `false` | Default for `showBcContainerCommand` |
+| `auth` | string | `""` | `""`, `Windows`, `NavUserPassword` | **Overrides** `auth` |
+| `isolation` | string | `""` | `""`, `hyperv`, `process` | **Overrides** `isolation` |
+| `showBcContainerCommand` | boolean | not set | `true`, `false` | **Overrides** `showBcContainerCommand` |
 | `deleteMissing` | string | `""` | `""`, `skip`, `warn`, `mark` | **Overrides** `import.deleteMissing` |
 | `containerName` | string or object | `""` | `""` or any [`containerName`](configuration.md#containername) form | **Overrides** `containerName` |
+| `artifact` | object | not set | `{ "url": "https://..." }` | **Overrides** `artifact` |
+
+`backupFolder`, `licenseFolder` and `bcContainerHelperVersion` have no counterpart in `navgit.json`; they only tell
+NAVGit where things are on this machine.
 
 ### `backupFolder`
 
@@ -55,16 +67,6 @@ Coming from AdvaniaGIT, point it at `C:\AdvaniaGIT\Backup` to keep using your ex
 The second place a relative `licenseFile` is looked up (after the repository root). Coming from AdvaniaGIT, point it
 at `C:\AdvaniaGIT\License`.
 
-### `defaultAuth`
-
-Used when `navgit.json` has no `auth`. Empty means: `NavUserPassword` on Azure AD joined machines, `Windows`
-elsewhere. See [`auth`](configuration.md#auth).
-
-### `defaultIsolation`
-
-Used when `navgit.json` has no `isolation` key at all. `""` lets BcContainerHelper choose. An explicit
-`"isolation": ""` in `navgit.json` still wins over this setting.
-
 ### `bcContainerHelperVersion`
 
 When set, NAVGit imports exactly this version of BcContainerHelper (`Import-Module -RequiredVersion`). The version
@@ -77,35 +79,71 @@ Install-Module BcContainerHelper -RequiredVersion 6.0.30 -Scope AllUsers
 Empty (default) imports the newest installed version. If BcContainerHelper is already loaded in the session, NAVGit
 uses the loaded one.
 
+### `auth`
+
+Personal override for [`auth`](configuration.md#auth). Empty (default) uses the repository's `auth`, or, when it has
+none, `NavUserPassword` on Azure AD joined machines and `Windows` elsewhere.
+
+Set it to `NavUserPassword` on an Azure AD joined machine when a repository says `"auth": "Windows"`: Windows
+authentication does not work for Azure AD accounts inside a container.
+
+This setting used to be called `defaultAuth`. The old name is still read, with a warning asking you to rename it.
+
+### `isolation`
+
+Personal override for [`isolation`](configuration.md#isolation). Empty (default) uses the repository's value. An
+empty user setting cannot force "let BcContainerHelper decide" over a repository that names a mode.
+
+This setting used to be called `defaultIsolation`. The old name is still read, with a warning asking you to rename
+it.
+
 ### `showBcContainerCommand`
 
-Personal default for [`showBcContainerCommand`](configuration.md#showbccontainercommand). Must be a JSON boolean.
-A value in `navgit.json` wins.
+Personal override for [`showBcContainerCommand`](configuration.md#showbccontainercommand). Must be a JSON boolean.
+Both `true` and `false` win over the repository; leave the setting out to use the repository's value.
 
 ### `deleteMissing`
 
-Personal override for [`import.deleteMissing`](configuration.md#importdeletemissing). Unlike the other settings, this
-one **wins** over the repository: when it is set, every repository uses it, whatever its `navgit.json` says. With
-`-Verbose` NAVGit reports when it overrides the repository's value. Empty (default) uses the repository's setting.
+Personal override for [`import.deleteMissing`](configuration.md#importdeletemissing). Empty (default) uses the
+repository's setting.
 
 ### `containerName`
 
 Personal override for [`containerName`](configuration.md#containername), in any of its forms: a name,
-`{ "fixed": "Contoso" }` or `{ "branch": { "prefix": "MIS", "length": 8 } }`. Like `deleteMissing`, it **wins** over the repository.
+`{ "fixed": "Contoso" }` or `{ "branch": { "prefix": "MIS", "length": 8 } }`.
 
 A `branch` rule here applies only on ticket branches (`MIS-1234-…`, or only those of `prefix` when set). On other branches the repository's
 `containerName` is used, or the name derived from `projectName` when it has none. This lets you work with one
 container per ticket while colleagues keep the repository's fixed name. Empty (default) uses the repository's
 setting.
 
+### `artifact`
+
+Personal override for [`artifact`](configuration.md#artifact-required). Only the URL form is accepted:
+
+```json
+"artifact": { "url": "https://bcartifacts.blob.core.windows.net/onprem/9.0.50357.0/na" }
+```
+
+When set, it replaces the repository's `artifact` completely, whatever form that uses (`nav`/`cu`, `version`, or
+`url`). The URL must start with `https://` and point to an OnPrem artifact of version 9 (NAV 2016) to 14 (BC14),
+as described under [Form 1](configuration.md#artifact-required). The `nav` and `version` forms are not accepted here.
+
+Because it applies to every repository, use it for a temporary pin (for example a specific build while you test
+something) and remove it afterwards. A repository for another NAV version would otherwise be built from this
+artifact too.
+
 ## Validation
 
 - The file must be valid JSON containing one object, or every command stops with an error.
 - Unknown keys produce a warning (`unknown setting '…' is ignored`).
-- Values are read as strings except `showBcContainerCommand`, which must be `true` or `false`, and `containerName`,
-  which may also be an object (checked when a repository's configuration is loaded).
-- `defaultAuth`, `defaultIsolation` and `deleteMissing` are checked against their allowed values; an invalid value is
-  an error, not a warning.
+- Values are read as strings except `showBcContainerCommand`, which must be `true` or `false`, `containerName`,
+  which may also be an object (checked when a repository's configuration is loaded), and `artifact`, which must be
+  `{ "url": "https://..." }`.
+- `auth`, `isolation` and `deleteMissing` are checked against their allowed values; an invalid value is an error,
+  not a warning.
+- The old names `defaultAuth` and `defaultIsolation` are read as `auth` and `isolation`, with a warning. When both
+  the old and the new name are present, the new one is used.
 
 ## Other per-user data
 

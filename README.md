@@ -1,6 +1,6 @@
 # NAVGit
 
-![NAVGit logo](assets/logo.png)
+![NAVGit logo](assets/logo.png){width=250px height=250px}
 
 A slim replacement for AdvaniaGIT: a PowerShell module and a VS Code extension for working with Dynamics NAV 2016,
 NAV 2017, NAV 2018 and Business Central 14 (C/AL) in Docker containers built with
@@ -108,9 +108,9 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 
 ```json
 {
-  "projectName": "Customer",
-  "artifact": { "nav": "2018", "cu": "cu30", "country": "no" },
-  "database": { "bakFile": "C:\\Backups\\Customer.bak" },
+  "projectName": "Contoso",
+  "artifact": { "nav": "2016", "cu": "cu32", "country": "na" },
+  "database": { "bakFile": "C:\\Backups\\Contoso.bak" },
   "licenseFile": "Customer{major}.flf",
   "auth": "NavUserPassword",
   "isolation": "hyperv",
@@ -129,8 +129,8 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 | `database.searchNames` | `[]` | Extra names to try after `projectName` when searching the `backupFolder`. |
 | `database.useDemo` | `false` | Use the Cronus demo database. Without `bakFile`, a found backup or `useDemo`, building fails instead of silently using Cronus. |
 | `licenseFile` | | License file: absolute, relative to the repository or the user `licenseFolder`, or a URL. `{major}` is replaced by the major version. Empty: the demo license from the artifact. |
-| `auth` | user `defaultAuth`, else `NavUserPassword` on Azure AD joined machines, `Windows` elsewhere | `Windows` or `NavUserPassword`. |
-| `isolation` | user `defaultIsolation`, else `""` | `hyperv`, `process` or `""` (BcContainerHelper decides). |
+| `auth` | `NavUserPassword` on Azure AD joined machines, `Windows` elsewhere | `Windows` or `NavUserPassword`. |
+| `isolation` | `""` | `hyperv`, `process` or `""` (BcContainerHelper decides). |
 | `memoryLimit` | `""` | E.g. `8G`. BcContainerHelper uses 8G for Hyper-V isolation when empty. |
 | `dns` | `""` | DNS server, or `hostDNS`. |
 | `updateHosts` | `true` | Add the container to the hosts file (needed by the client commands). |
@@ -152,7 +152,7 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 | `export.filter` | `""` | C/SIDE filter for the export; empty exports all objects. Only a full export removes files of deleted objects. |
 | `export.format` | `txt folder` | Export format. |
 | `client.defaultProfile` | `""` | Profile opened by *Start NAV Client (default)*; empty opens the default role center. |
-| `showBcContainerCommand` | user setting, else `false` | Write the full `New-BcContainer` command (credential hidden) to the output before building. |
+| `showBcContainerCommand` | `false` | Write the full `New-BcContainer` command (credential hidden) to the output before building. |
 
 ## User settings
 
@@ -160,24 +160,28 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 
 ```json
 {
-  "backupFolder": "C:\\AdvaniaGIT\\Backup",
-  "licenseFolder": "C:\\AdvaniaGIT\\License",
-  "defaultAuth": "NavUserPassword",
-  "defaultIsolation": "hyperv",
+  "backupFolder": "C:\\NAVGIT\\Backup",
+  "licenseFolder": "C:\\NAVGIT\\License",
+  "auth": "NavUserPassword",
+  "isolation": "hyperv",
   "bcContainerHelperVersion": "",
-  "showBcContainerCommand": false,
   "deleteMissing": ""
 }
 ```
+
+A user setting that is set always **wins** over `navgit.json`, in every repository. Empty settings leave the
+repository's values alone.
 
 - `backupFolder`: searched when `database.bakFile` is not set, in AdvaniaGIT's order:
   `<release>-<name>.bak`, `<release>\<version>\<name>.bak`, `<release>\<name>.bak` for `projectName`, then each of
   `database.searchNames`.
 - `licenseFolder`: used for relative `licenseFile` values.
-- `defaultAuth` / `defaultIsolation`: used when `navgit.json` has no `auth` / `isolation`.
 - `bcContainerHelperVersion`: pin a BcContainerHelper version.
-- `showBcContainerCommand`: personal default; `navgit.json` wins when it sets it.
-- `deleteMissing`: `skip`, `warn` or `mark`. When set, it **overrides** `import.deleteMissing` in every repository's `navgit.json`; empty uses the repository's setting.
+- `auth` / `isolation` / `showBcContainerCommand`: override the same settings in `navgit.json` (`auth` and
+  `isolation` used to be called `defaultAuth` / `defaultIsolation`; the old names still work, with a warning).
+- `deleteMissing`: `skip`, `warn` or `mark`; overrides `import.deleteMissing`.
+- `containerName`: overrides `containerName`, e.g. `{ "branch": { "prefix": "MIS", "length": 8 } }` for one container per ticket branch.
+- `artifact`: `{ "url": "https://.../onprem/<version>/<country>" }`; overrides `artifact`.
 
 ## Where NAVGit keeps things
 
