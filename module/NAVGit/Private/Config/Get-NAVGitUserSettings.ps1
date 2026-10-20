@@ -31,6 +31,8 @@ function Get-NAVGitUserSettings {
         showBcContainerCommand   = $false
         # Personal override; wins over import.deleteMissing in navgit.json when set.
         deleteMissing            = ''
+        # Personal override; wins over containerName in navgit.json when set. A name or an object (see navgit.json).
+        containerName            = ''
     }
     $booleanKeys = @('showBcContainerCommand')
 
@@ -53,6 +55,16 @@ function Get-NAVGitUserSettings {
             if ($booleanKeys -contains $key) {
                 if ($fileSettings[$key] -isnot [bool]) {
                     throw "NAVGit user settings '$Path': $key must be true or false (was '$($fileSettings[$key])')."
+                }
+                $settings[$key] = $fileSettings[$key]
+                continue
+            }
+            if ($key -eq 'containerName' -and $fileSettings[$key] -is [hashtable]) {
+                # Validated when the configuration is loaded (Resolve-NAVGitContainerName).
+                foreach ($subKey in $fileSettings[$key].Keys) {
+                    if ($subKey -notin @('fixed', 'branch')) {
+                        Write-Warning "NAVGit user settings '$Path': unknown setting 'containerName.$subKey' is ignored."
+                    }
                 }
                 $settings[$key] = $fileSettings[$key]
                 continue

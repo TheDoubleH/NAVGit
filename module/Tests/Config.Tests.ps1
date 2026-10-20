@@ -343,4 +343,103 @@ InModuleScope NAVGit {
             Get-NAVGitContainerName -ProjectName $ProjectName | Should -Be $Expected
         }
     }
+
+    Describe 'Resolve-NAVGitContainerName' {
+        BeforeAll {
+            $common = @{ ProjectName = 'Customer_NAV2018'; RepositoryPath = $TestDrive }
+            $branchRule = @{ branch = @{ length = 8 } }
+        }
+
+        It 'derives the name from projectName when nothing is set' {
+            Resolve-NAVGitContainerName @common -UserValue '' | Should -Be 'Customer-NAV201'
+        }
+
+        It 'accepts a plain name and the fixed form' {
+            Resolve-NAVGitContainerName @common -RepoValue 'Contoso' | Should -Be 'Contoso'
+            Resolve-NAVGitContainerName @common -RepoValue @{ fixed = 'Contoso' } | Should -Be 'Contoso'
+        }
+
+        It 'lets the user setting win over navgit.json' {
+            Resolve-NAVGitContainerName @common -UserValue @{ fixed = 'Mine' } -RepoValue 'Contoso' | Should -Be 'Mine'
+        }
+
+        It 'uses the first <length> characters of a ticket branch' {
+            Resolve-NAVGitContainerName @common -RepoValue $branchRule -BranchName 'MIS-1234-fix-posting' | Should -Be 'MIS-1234'
+        }
+
+        It 'uses the whole branch when it is shorter than length' {
+            Resolve-NAVGitContainerName @common -RepoValue @{ branch = @{ length = 15 } } -BranchName 'MIS-1234' | Should -Be 'MIS-1234'
+        }
+
+        It 'falls back to navgit.json on a branch without a ticket key' {
+            Resolve-NAVGitContainerName @common -UserValue $branchRule -RepoValue 'Contoso' -BranchName 'main' | Should -Be 'Contoso'
+        }
+
+        It 'falls back to the derived name on <BranchName>' -ForEach @(
+            @{ BranchName = 'main' }
+            @{ BranchName = 'feature-12-x' }
+            @{ BranchName = '' }
+        ) {
+            Resolve-NAVGitContainerName @common -RepoValue $branchRule -BranchName $BranchName -WarningAction SilentlyContinue |
+                Should -Be 'Customer-NAV201'
+        }
+
+        It 'with prefix <Prefix>, turns <BranchName> into <Expected>' -ForEach @(
+            @{ Prefix = 'MIS'; BranchName = 'MIS-1234-fix-posting'; Expected = 'MIS-1234' }
+            @{ Prefix = 'MIS-'; BranchName = 'MIS-1234-fix-posting'; Expected = 'MIS-1234' }
+            @{ Prefix = 'MIS'; BranchName = 'mis-1234-fix-posting'; Expected = 'mis-1234' }
+            @{ Prefix = 'MIS'; BranchName = 'MISC-1234-cleanup'; Expected = 'Customer-NAV201' }
+            @{ Prefix = 'MIS'; BranchName = 'MIS-cleanup'; Expected = 'Customer-NAV201' }
+            @{ Prefix = 'MIS'; BranchName = 'OPS-77-x'; Expected = 'Customer-NAV201' }
+            @{ Prefix = ''; BranchName = 'OPS-77-x'; Expected = 'OPS-77-x' }
+        ) {
+            Resolve-NAVGitContainerName @common -RepoValue @{ branch = @{ prefix = $Prefix; length = 8 } } -BranchName $BranchName |
+                Should -Be $Expected
+        }
+
+        It 'reads the branch with git when no branch name is given' {
+            Mock Get-NAVGitBranchName { 'MIS-0042-text' }
+            Resolve-NAVGitContainerName @common -RepoValue $branchRule | Should -Be 'MIS-0042'
+            Should -Invoke Get-NAVGitBranchName -Times 1 -Exactly
+        }
+
+        It 'does not read the branch for a fixed name' {
+            Mock Get-NAVGitBranchName { 'MIS-0042-text' }
+            Resolve-NAVGitContainerName @common -RepoValue 'Contoso' | Should -Be 'Contoso'
+            Should -Invoke Get-NAVGitBranchName -Times 0 -Exactly
+        }
+
+        It 'rejects <Name>' -ForEach @(
+            @{ Name = 'an invalid fixed name'; Value = @{ fixed = 'this-name-is-too-long' }; Message = "*'containerName.fixed'*1-15 characters*" }
+            @{ Name = 'both forms'; Value = @{ fixed = 'A'; branch = @{ length = 8 } }; Message = '*exactly one of*' }
+            @{ Name = 'no form'; Value = @{}; Message = '*exactly one of*' }
+            @{ Name = 'a length of 0'; Value = @{ branch = @{ length = 0 } }; Message = "*'containerName.branch' must be*" }
+            @{ Name = 'a string length'; Value = @{ branch = @{ length = '8' } }; Message = "*'containerName.branch' must be*" }
+            @{ Name = 'a number'; Value = 8; Message = "*'containerName' must be a name*" }
+            @{ Name = 'a prefix with a dash inside'; Value = @{ branch = @{ prefix = 'MIS-X'; length = 8 } }; Message = "*'containerName.branch.prefix'*issue key*" }
+            @{ Name = 'a prefix that is not a string'; Value = @{ branch = @{ prefix = 5; length = 8 } }; Message = "*'containerName.branch.prefix'*issue key*" }
+        ) {
+            { Resolve-NAVGitContainerName @common -RepoValue $Value -BranchName 'MIS-1234' } | Should -Throw $Message
+        }
+    }
+
+    Describe 'Get-NAVGitConfig containerName' {
+        It 'reads the branch rule from navgit.json and the user settings' {
+            Mock Get-NAVGitBranchName { 'MIS-1234-fix-posting' }
+            $repo = New-TestRepository -Config @{ containerName = @{ branch = @{ length = 8 } } }
+            (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).containerName | Should -Be 'MIS-1234'
+
+            $repo = New-TestRepository -Config @{ containerName = 'Contoso' }
+            (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ containerName = @{ branch = @{ length = 8 } } })).containerName |
+                Should -Be 'MIS-1234'
+        }
+
+        It 'keeps an object containerName from the user settings file' {
+            $path = Join-Path $TestDrive 'container-settings.json'
+            Set-Content -LiteralPath $path -Value '{ "containerName": { "branch": { "length": 8 } } }'
+            $settings = Get-NAVGitUserSettings -Path $path
+            $settings.containerName | Should -BeOfType [hashtable]
+            $settings.containerName.branch.length | Should -Be 8
+        }
+    }
 }

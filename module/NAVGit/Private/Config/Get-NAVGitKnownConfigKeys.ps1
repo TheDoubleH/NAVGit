@@ -10,7 +10,7 @@ function Get-NAVGitKnownConfigKeys {
 
     return @{
         'projectName'          = $null
-        'containerName'        = $null
+        'containerName'        = @('fixed', 'branch')
         'navRelease'           = $null
         'artifact'             = @('url', 'nav', 'cu', 'country', 'type', 'version', 'select')
         'imageName'            = $null
