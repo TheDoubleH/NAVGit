@@ -49,11 +49,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # Only module/NAVGit is published (not the tests).
+      # Only module/NAVGit is published (not the tests). Point at the manifest: given the folder, Publish-PSResource
+      # takes the first .psd1 it finds, which is Commands.psd1 (a data file, not a manifest).
       - name: Publish NAVGit
         env:
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-        run: Publish-PSResource -Path module/NAVGit -Repository PSGallery -ApiKey $env:PSGALLERY_API_KEY
+        run: Publish-PSResource -Path module/NAVGit/NAVGit.psd1 -Repository PSGallery -ApiKey $env:PSGALLERY_API_KEY
 
   publish-extension:
     name: Publish to the VS Code Marketplace

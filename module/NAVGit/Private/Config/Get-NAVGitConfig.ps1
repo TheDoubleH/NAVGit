@@ -36,9 +36,9 @@ function Get-NAVGitConfig {
     $config = Merge-NAVGitHashtable -Base (Get-NAVGitDefaultConfig -UserSettings $UserSettings) -Override $repoConfig
     $config.Remove('$schema')
 
-    if (-not $config.containerName -and $config.projectName -is [string] -and $config.projectName) {
-        $config.containerName = Get-NAVGitContainerName -ProjectName $config.projectName
-    }
+    # A personal containerName wins over the repository's; a branch rule gives one container per ticket branch.
+    $config.containerName = Resolve-NAVGitContainerName -UserValue $UserSettings.containerName -RepoValue $repoConfig.containerName `
+        -ProjectName $config.projectName -RepositoryPath $repositoryPath -SettingsPath $UserSettings.settingsPath -ConfigPath $configPath
 
     Assert-NAVGitConfig -Config $config -RepoConfig $repoConfig -ConfigPath $configPath
 

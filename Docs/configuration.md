@@ -3,25 +3,59 @@
 `navgit.json` is the per-repository configuration file. It lives in the repository root and is committed to Git, so
 everyone working on the repository builds the same container.
 
-- [How the file is found and read](#how-the-file-is-found-and-read)
-- [Minimal and full examples](#examples)
-- [Settings at a glance](#settings-at-a-glance)
-- [Setting details](#setting-details)
-  - [Identity](#identity): `projectName`, `containerName`, `navRelease`
-  - [Artifact](#artifact): `artifact`
-  - [Image](#image): `imageName`
-  - [Database](#database): `database.bakFile`, `database.useDemo`, `database.searchNames`
-  - [License](#license): `licenseFile`
-  - [Container options](#container-options): `auth`, `isolation`, `memoryLimit`, `dns`, `updateHosts`,
-    `enableSymbolLoading`, `myScripts`, `additionalParameters`
-  - [Test toolkit](#test-toolkit): `includeTestToolkit`, `testToolkit.*`
-  - [Folders](#folders): `paths.*`
-  - [Test object detection](#test-object-detection): `testObjects.*`
-  - [Import](#import): `import.*`
-  - [Export](#export): `export.*`
-  - [Client](#client): `client.defaultProfile`
-  - [Output](#output): `showBcContainerCommand`
-- [Validation rules and error messages](#validation)
+- [navgit.json reference](#navgitjson-reference)
+  - [How the file is found and read](#how-the-file-is-found-and-read)
+  - [Examples](#examples)
+  - [Settings at a glance](#settings-at-a-glance)
+  - [Setting details](#setting-details)
+    - [Identity](#identity)
+      - [`projectName` (required)](#projectname-required)
+      - [`containerName`](#containername)
+      - [`navRelease`](#navrelease)
+    - [Artifact](#artifact)
+      - [`artifact` (required)](#artifact-required)
+    - [Image](#image)
+      - [`imageName`](#imagename)
+    - [Database](#database)
+      - [`database.bakFile`](#databasebakfile)
+      - [`database.useDemo`](#databaseusedemo)
+      - [`database.searchNames`](#databasesearchnames)
+    - [License](#license)
+      - [`licenseFile`](#licensefile)
+    - [Container options](#container-options)
+      - [`auth`](#auth)
+      - [`isolation`](#isolation)
+      - [`memoryLimit`](#memorylimit)
+      - [`dns`](#dns)
+      - [`updateHosts`](#updatehosts)
+      - [`enableSymbolLoading`](#enablesymbolloading)
+      - [`myScripts`](#myscripts)
+      - [`additionalParameters`](#additionalparameters)
+    - [Test toolkit](#test-toolkit)
+      - [`includeTestToolkit`](#includetesttoolkit)
+      - [`testToolkit.country`](#testtoolkitcountry)
+      - [`testToolkit.librariesOnly`](#testtoolkitlibrariesonly)
+    - [Folders](#folders)
+      - [`paths.objects`](#pathsobjects)
+      - [`paths.tests`](#pathstests)
+      - [`paths.addIns`](#pathsaddins)
+    - [Test object detection](#test-object-detection)
+      - [`testObjects.versionListPattern`](#testobjectsversionlistpattern)
+      - [`testObjects.includeTestCodeunits`](#testobjectsincludetestcodeunits)
+    - [Import](#import)
+      - [`import.deleteMissing`](#importdeletemissing)
+      - [`import.syncSchema`](#importsyncschema)
+      - [`import.compileFilter`](#importcompilefilter)
+      - [`import.dateFormat`](#importdateformat)
+    - [Export](#export)
+      - [`export.filter`](#exportfilter)
+      - [`export.format`](#exportformat)
+    - [Client](#client)
+      - [`client.defaultProfile`](#clientdefaultprofile)
+    - [Output](#output)
+      - [`showBcContainerCommand`](#showbccontainercommand)
+  - [Validation](#validation)
+    - [Letter case](#letter-case)
 
 For the per-user file (`%APPDATA%\NAVGit\settings.json`) see [user-settings.md](user-settings.md).
 
@@ -111,7 +145,7 @@ Every setting, with its default value (except where noted):
 | Setting | Type | Required | Default | Accepted values |
 | --- | --- | --- | --- | --- |
 | `projectName` | string | **yes** | | any non-empty string |
-| `containerName` | string | | derived from `projectName` | 1–15 chars, `A-Z a-z 0-9 -`, starts with a letter or digit |
+| `containerName` | string or object | | derived from `projectName` | 1–15 chars, `A-Z a-z 0-9 -`, starts with a letter or digit; or `{ "fixed": … }` / `{ "branch": { "prefix": "MIS", "length": 1–15 } }` (`prefix` optional) |
 | `navRelease` | string | | derived from the version | any string |
 | `artifact` | object | **yes** | | exactly one of the three [forms](#artifact) |
 | `artifact.url` | string | | | `https://…/onprem/<version>/<country>` |
@@ -176,6 +210,31 @@ The Docker container name, which is also the host name the container gets in the
   trailing `-` removed again). `Customer_Main_Branch_2018` becomes `Customer-Main-B`.
 
 Two repositories with the same `containerName` share one container: building one replaces the other.
+
+`containerName` takes one of three forms:
+
+```json
+"containerName": "Contoso"
+"containerName": { "fixed": "Contoso" }
+"containerName": { "branch": { "length": 8 } }
+"containerName": { "branch": { "prefix": "MIS", "length": 8 } }
+```
+
+The first two are the same: always this name. The `branch` form gives every ticket branch its own container, so
+several can run side by side. It uses the first `length` characters of the current Git branch: with
+`"length": 8` the branch `MIS-1234-fix-posting` gets the container `MIS-1234`. Characters that are not allowed
+become `-`, as for the derived name.
+
+- Only *ticket branches* count. With `prefix`, that is a branch starting with the prefix, `-` and a digit:
+  `"prefix": "MIS"` matches `MIS-1234-fix-posting` and `mis-1234-…`, but not `MISC-1234`, `MIS-cleanup` or
+  `OPS-77`. The `-` is added for you (`"MIS-"` means the same as `"MIS"`). Without `prefix`, any upper case issue key
+  counts: upper case letters and digits, `-` and a number (`MIS-1234`, `AB2-7`). On any other branch (`main`, `feature/x`), on a detached HEAD, or when `git` is not
+  installed, the rule is skipped and the next name is used: the `navgit.json` value when the rule came from the
+  user settings, else the name derived from `projectName`. So `main` keeps its one shared container.
+- The branch is read when a command loads the configuration, so switching branch switches container. Build the
+  container once per ticket (`New-NAVGitContainer`); remove it with `Remove-NAVGitContainer` while that branch is
+  checked out.
+- `containerName` in the [user settings](user-settings.md#containername) **wins** over this one.
 
 #### `navRelease`
 
