@@ -214,13 +214,27 @@ The Docker container name, which is also the host name the container gets in the
 
 Two repositories with the same `containerName` share one container: building one replaces the other.
 
-`containerName` takes one of three forms:
+`containerName` takes one of four forms:
 
 ```json
-"containerName": "Contoso"
-"containerName": { "fixed": "Contoso" }
-"containerName": { "branch": { "length": 8 } }
-"containerName": { "branch": { "prefix": "MIS", "length": 8 } }
+"containerName": "Contoso",
+
+"containerName": {
+  "fixed": "Contoso"
+},
+
+"containerName": {
+  "branch": {
+    "length": 8
+  }
+},
+
+"containerName": {
+  "branch": {
+    "prefix": "MIS",
+    "length": 8
+  }
+}
 ```
 
 The first two are the same: always this name. The `branch` form gives every ticket branch its own container, so
@@ -265,7 +279,8 @@ of three forms; NAVGit decides the form from which of `url`, `nav` or `version` 
 ##### Form 1: explicit URL
 
 ```json
-"artifact": { "url": "https://bcartifacts-exdbf9fwegejdqak.b02.azurefd.net/onprem/9.0.50357.0/na" }
+"artifact": { 
+  "url": "https://bcartifacts-exdbf9fwegejdqak.b02.azurefd.net/onprem/9.0.50357.0/na" }
 ```
 
 | Key | Rules |
@@ -277,7 +292,10 @@ of three forms; NAVGit decides the form from which of `url`, `nav` or `version` 
 ##### Form 2: NAV release (resolved with `Get-NavArtifactUrl`)
 
 ```json
-"artifact": { "nav": "2016", "cu": "cu32", "country": "na" }
+"artifact": { 
+  "nav": "2016",
+  "cu": "cu32",
+  "country": "na" }
 ```
 
 | Key | Accepted values | Default |
@@ -292,7 +310,10 @@ Business Central 13/14 are not available in this form; use form 3.
 **Form 3: version prefix (resolved with `Get-BcArtifactUrl -type OnPrem`)**
 
 ```json
-"artifact": { "version": "14.0", "country": "w1", "select": "Latest" }
+"artifact": { 
+  "version": "14.0", 
+  "country": "w1", 
+  "select": "Latest" }
 ```
 
 | Key | Accepted values | Default |
@@ -338,8 +359,8 @@ Accepted values and how they are resolved:
 | Value | Resolution |
 | --- | --- |
 | `http://…` or `https://…` | Passed on as is; BcContainerHelper downloads it. |
-| Absolute path (`C:\Backups\Customer.bak`) | Must exist. |
-| Relative path (`Backups\Customer.bak`) | Tried relative to the repository root first, then relative to the user `backupFolder`. The first existing file is used. |
+| Absolute path (`C:\Backups\Contoso.bak`) | Must exist. |
+| Relative path (`Backups\Contoso.bak`) | Tried relative to the repository root first, then relative to the user `backupFolder`. The first existing file is used. |
 
 A configured `bakFile` that cannot be found is an error (NAVGit does not continue with a search).
 
@@ -361,12 +382,12 @@ The search tries `projectName` first and then each entry of `searchNames`. For e
 2. `<backupFolder>\<navRelease>\<version>\<name>.bak`
 3. `<backupFolder>\<navRelease>\<name>.bak`
 
-Example: `projectName` `Customer`, NAV 2018 CU30 (11.0.43274.0), `searchNames` `["master"]`:
+Example: `projectName` `Contoso`, NAV 2018 CU30 (11.0.43274.0), `searchNames` `["master"]`:
 
 ```text
-C:\Backups\2018-Customer.bak
-C:\Backups\2018\11.0.43274.0\Customer.bak
-C:\Backups\2018\Customer.bak
+C:\Backups\2018-Contoso.bak
+C:\Backups\2018\11.0.43274.0\Contoso.bak
+C:\Backups\2018\Contoso.bak
 C:\Backups\2018-master.bak
 C:\Backups\2018\11.0.43274.0\master.bak
 C:\Backups\2018\master.bak

@@ -29,8 +29,15 @@ The file is optional. When it does not exist, every setting has its default.
   "bcContainerHelperVersion": "",
   "showBcContainerCommand": false,
   "deleteMissing": "",
-  "containerName": { "branch": { "prefix": "MIS", "length": 8 } },
-  "artifact": { "url": "https://bcartifacts.blob.core.windows.net/onprem/9.0.50357.0/na" }
+  "containerName": {
+    "branch": {
+      "prefix": "MIS",
+      "length": 8
+    }
+  },
+  "artifact": {
+    "url": "https://bcartifacts.blob.core.windows.net/onprem/9.0.50357.0/na"
+  }
 }
 ```
 
@@ -110,7 +117,21 @@ repository's setting.
 ### `containerName`
 
 Personal override for [`containerName`](configuration.md#containername), in any of its forms: a name,
-`{ "fixed": "Contoso" }` or `{ "branch": { "prefix": "MIS", "length": 8 } }`.
+
+```json
+{ "branch": {
+    "fixed": "Contoso" }
+}
+```
+
+or
+
+```json
+{ "branch": {
+    "prefix": "MIS", 
+    "length": 8 }
+}
+```
 
 A `branch` rule here applies only on ticket branches (`MIS-1234-…`, or only those of `prefix` when set). On other branches the repository's
 `containerName` is used, or the name derived from `projectName` when it has none. This lets you work with one
@@ -122,7 +143,9 @@ setting.
 Personal override for [`artifact`](configuration.md#artifact-required). Only the URL form is accepted:
 
 ```json
-"artifact": { "url": "https://bcartifacts.blob.core.windows.net/onprem/9.0.50357.0/na" }
+"artifact": {
+  "url": "https://bcartifacts.blob.core.windows.net/onprem/9.0.50357.0/na"
+}
 ```
 
 When set, it replaces the repository's `artifact` completely, whatever form that uses (`nav`/`cu`, `version`, or
