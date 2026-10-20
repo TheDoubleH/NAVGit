@@ -14,9 +14,50 @@
       "description": "Project name. Used for the default container name and the backup folder search."
     },
     "containerName": {
-      "type": "string",
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,14}$",
-      "description": "Docker container name (max 15 characters, letters, digits and '-'). Default: projectName with '_' replaced by '-', truncated to 15 characters."
+      "description": "Docker container name (max 15 characters, letters, digits and '-'): a name, { \"fixed\": name } or { \"branch\": { \"prefix\": key, \"length\": n } } (first n characters of a ticket branch such as MIS-1234-text, else the default). containerName in the user settings wins. Default: projectName with '_' replaced by '-', truncated to 15 characters.",
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,14}$"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fixed"],
+          "properties": {
+            "fixed": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,14}$",
+              "description": "Always use this container name."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["branch"],
+          "properties": {
+            "branch": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["length"],
+              "properties": {
+                "prefix": {
+                  "type": "string",
+                  "pattern": "^([A-Za-z][A-Za-z0-9]*-?)?$",
+                  "description": "Issue key the branch must start with, followed by '-' and a number, e.g. 'MIS' matches MIS-1234-text but not MISC-1234 or OPS-1234 (case-insensitive). Default: any upper case issue key."
+                },
+                "length": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 15,
+                  "description": "Number of leading characters of the branch name to use, e.g. 8 turns MIS-1234-fix-posting into MIS-1234. Branches that do not start with a ticket key (prefix-number, e.g. MIS-1234) use the next containerName (user settings, then navgit.json, then the default)."
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "navRelease": {
       "type": "string",

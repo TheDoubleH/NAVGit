@@ -40,6 +40,7 @@ function New-TestUserSettings {
         bcContainerHelperVersion = ''
         showBcContainerCommand   = $false
         deleteMissing            = ''
+        containerName            = ''
         settingsPath             = 'TestDrive:\settings.json'
     }
     foreach ($key in $Settings.Keys) { $result[$key] = $Settings[$key] }

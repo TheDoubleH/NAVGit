@@ -21,7 +21,8 @@ The file is optional. When it does not exist, every setting has its default.
   "defaultIsolation": "hyperv",
   "bcContainerHelperVersion": "",
   "showBcContainerCommand": false,
-  "deleteMissing": ""
+  "deleteMissing": "",
+  "containerName": { "branch": { "prefix": "MIS", "length": 8 } }
 }
 ```
 
@@ -36,6 +37,7 @@ The file is optional. When it does not exist, every setting has its default.
 | `bcContainerHelperVersion` | string | `""` | `""` or an installed version, e.g. `6.0.30` | Pins the BcContainerHelper version |
 | `showBcContainerCommand` | boolean | `false` | `true`, `false` | Default for `showBcContainerCommand` |
 | `deleteMissing` | string | `""` | `""`, `skip`, `warn`, `mark` | **Overrides** `import.deleteMissing` |
+| `containerName` | string or object | `""` | `""` or any [`containerName`](configuration.md#containername) form | **Overrides** `containerName` |
 
 ### `backupFolder`
 
@@ -86,11 +88,22 @@ Personal override for [`import.deleteMissing`](configuration.md#importdeletemiss
 one **wins** over the repository: when it is set, every repository uses it, whatever its `navgit.json` says. With
 `-Verbose` NAVGit reports when it overrides the repository's value. Empty (default) uses the repository's setting.
 
+### `containerName`
+
+Personal override for [`containerName`](configuration.md#containername), in any of its forms: a name,
+`{ "fixed": "Contoso" }` or `{ "branch": { "prefix": "MIS", "length": 8 } }`. Like `deleteMissing`, it **wins** over the repository.
+
+A `branch` rule here applies only on ticket branches (`MIS-1234-…`, or only those of `prefix` when set). On other branches the repository's
+`containerName` is used, or the name derived from `projectName` when it has none. This lets you work with one
+container per ticket while colleagues keep the repository's fixed name. Empty (default) uses the repository's
+setting.
+
 ## Validation
 
 - The file must be valid JSON containing one object, or every command stops with an error.
 - Unknown keys produce a warning (`unknown setting '…' is ignored`).
-- Values are read as strings except `showBcContainerCommand`, which must be `true` or `false`.
+- Values are read as strings except `showBcContainerCommand`, which must be `true` or `false`, and `containerName`,
+  which may also be an object (checked when a repository's configuration is loaded).
 - `defaultAuth`, `defaultIsolation` and `deleteMissing` are checked against their allowed values; an invalid value is
   an error, not a warning.
 
