@@ -37,7 +37,8 @@ The file is optional. When it does not exist, every setting has its default.
   },
   "artifact": {
     "url": "https://bcartifacts.blob.core.windows.net/onprem/9.0.50357.0/na"
-  }
+  },
+  "uidOffset": "50100"
 }
 ```
 
@@ -54,9 +55,10 @@ The file is optional. When it does not exist, every setting has its default.
 | `deleteMissing` | string | `""` | `""`, `skip`, `warn`, `mark` | **Overrides** `import.deleteMissing` |
 | `containerName` | string or object | `""` | `""` or any [`containerName`](configuration.md#containername) form | **Overrides** `containerName` |
 | `artifact` | object | not set | `{ "url": "https://..." }` | **Overrides** `artifact` |
+| `uidOffset` | string or number | `""` | `""` or a whole number, e.g. `50100` | Sets the database's Uid Offset after a build |
 
-`backupFolder`, `licenseFolder` and `bcContainerHelperVersion` have no counterpart in `navgit.json`; they only tell
-NAVGit where things are on this machine.
+`backupFolder`, `licenseFolder`, `bcContainerHelperVersion` and `uidOffset` have no counterpart in `navgit.json`;
+they describe this machine or this developer.
 
 ### `backupFolder`
 
@@ -156,6 +158,18 @@ Because it applies to every repository, use it for a temporary pin (for example 
 something) and remove it afterwards. A repository for another NAV version would otherwise be built from this
 artifact too.
 
+### `uidOffset`
+
+Your personal Uid Offset, the value in C/SIDE under *Tools > Options > Uid Offset*. C/SIDE uses it to number the new
+objects and fields you create, so each developer can get their own range. It is stored in the database
+(`$ndo$dbproperty.uidoffset`), not in C/SIDE, so a new container starts with whatever the backup had.
+
+When set, Build Container writes it to the container database right after the container is created (also when Build
+and Update Container builds one). Existing containers are not changed; rebuild, or set it in C/SIDE. Empty (default)
+leaves the backup's value.
+
+A string (`"50100"`, as in AdvaniaGIT) or a JSON number (`50100`) is accepted.
+
 ## Validation
 
 - The file must be valid JSON containing one object, or every command stops with an error.
@@ -163,8 +177,8 @@ artifact too.
 - Values are read as strings except `showBcContainerCommand`, which must be `true` or `false`, `containerName`,
   which may also be an object (checked when a repository's configuration is loaded), and `artifact`, which must be
   `{ "url": "https://..." }`.
-- `auth`, `isolation` and `deleteMissing` are checked against their allowed values; an invalid value is an error,
-  not a warning.
+- `auth`, `isolation` and `deleteMissing` are checked against their allowed values, and `uidOffset` must be a whole
+  number from 0 to 2147483647; an invalid value is an error, not a warning.
 - The old names `defaultAuth` and `defaultIsolation` are read as `auth` and `isolation`, with a warning. When both
   the old and the new name are present, the new one is used.
 

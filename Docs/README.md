@@ -34,6 +34,7 @@ How they combine: **a user setting that is set always wins over `navgit.json`.**
 | Artifact | `artifact` | `artifact.url` | **settings.json** when set |
 | Backup location | `database.bakFile` | `backupFolder` | `bakFile`; relative paths are tried in the repository, then in `backupFolder` |
 | License location | `licenseFile` | `licenseFolder` | relative paths are tried in the repository, then in `licenseFolder` |
+| C/SIDE Uid Offset | | `uidOffset` | settings.json only; written to the database after a build |
 
 The VS Code extension has three settings of its own (`navgit.modulePath`, `navgit.powershellPath`,
 `navgit.runMode`); see [vscode-extension.md](vscode-extension.md#settings).

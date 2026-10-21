@@ -182,6 +182,7 @@ repository's values alone.
 - `deleteMissing`: `skip`, `warn` or `mark`; overrides `import.deleteMissing`.
 - `containerName`: overrides `containerName`, e.g. `{ "branch": { "prefix": "MIS", "length": 8 } }` for one container per ticket branch.
 - `artifact`: `{ "url": "https://.../onprem/<version>/<country>" }`; overrides `artifact`.
+- `uidOffset`: your C/SIDE Uid Offset, e.g. `"50100"`; written to the container database after each build.
 
 ## Where NAVGit keeps things
 

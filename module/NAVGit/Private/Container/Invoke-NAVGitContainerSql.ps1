@@ -78,6 +78,23 @@ WHERE [Type] > 0 AND [Company Name] = ''
         })
 }
 
+function Set-NAVGitUidOffset {
+    <#
+    .SYNOPSIS
+        Sets the database's Uid Offset (C/SIDE Tools > Options), which C/SIDE uses to number new objects and fields.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $ContainerName,
+
+        [Parameter(Mandatory)]
+        [int] $UidOffset
+    )
+
+    $null = Invoke-NAVGitContainerSql -ContainerName $ContainerName -Query ('UPDATE [dbo].[$ndo$dbproperty] SET [uidoffset] = {0}' -f $UidOffset)
+}
+
 function Set-NAVGitObjectsDeleted {
     <#
     .SYNOPSIS
