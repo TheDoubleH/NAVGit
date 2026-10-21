@@ -63,24 +63,54 @@ InModuleScope NAVGit {
         It 'returns defaults when the file does not exist' {
             $settings = Get-NAVGitUserSettings -Path (Join-Path $TestDrive 'missing.json')
             $settings.backupFolder | Should -Be ''
-            $settings.defaultIsolation | Should -Be ''
+            $settings.isolation | Should -Be ''
+            $settings.showBcContainerCommand | Should -BeNullOrEmpty
+            $settings.artifact | Should -BeNullOrEmpty
             $settings.settingsPath | Should -Be (Join-Path $TestDrive 'missing.json')
         }
 
         It 'reads values from the file and warns about unknown keys' {
             $path = Join-Path $TestDrive 'settings.json'
-            Set-Content -LiteralPath $path -Value '{ "backupFolder": "D:\\Backups", "defaultIsolation": "process", "typo": 1 }'
+            Set-Content -LiteralPath $path -Value '{ "backupFolder": "D:\\Backups", "isolation": "process", "typo": 1 }'
 
             $settings = Get-NAVGitUserSettings -Path $path -WarningVariable warnings -WarningAction SilentlyContinue
             $settings.backupFolder | Should -Be 'D:\Backups'
-            $settings.defaultIsolation | Should -Be 'process'
+            $settings.isolation | Should -Be 'process'
             $warnings | Should -Match "unknown setting 'typo'"
         }
 
-        It 'rejects an invalid defaultIsolation' {
+        It 'rejects an invalid isolation' {
             $path = Join-Path $TestDrive 'bad-settings.json'
-            Set-Content -LiteralPath $path -Value '{ "defaultIsolation": "vm" }'
-            { Get-NAVGitUserSettings -Path $path } | Should -Throw '*defaultIsolation*'
+            Set-Content -LiteralPath $path -Value '{ "isolation": "vm" }'
+            { Get-NAVGitUserSettings -Path $path } | Should -Throw '*isolation must be*'
+        }
+
+        It 'reads defaultAuth and defaultIsolation as auth and isolation, with a warning' {
+            $path = Join-Path $TestDrive 'old-settings.json'
+            Set-Content -LiteralPath $path -Value '{ "defaultAuth": "NavUserPassword", "defaultIsolation": "hyperv" }'
+            $settings = Get-NAVGitUserSettings -Path $path -WarningVariable warnings -WarningAction SilentlyContinue
+            $settings.auth | Should -Be 'NavUserPassword'
+            $settings.isolation | Should -Be 'hyperv'
+            ($warnings -join [Environment]::NewLine) | Should -Match "'defaultAuth' is now called 'auth'"
+        }
+
+        It 'prefers auth over the old defaultAuth' {
+            $path = Join-Path $TestDrive 'both-settings.json'
+            Set-Content -LiteralPath $path -Value '{ "defaultAuth": "Windows", "auth": "NavUserPassword" }'
+            $settings = Get-NAVGitUserSettings -Path $path -WarningVariable warnings -WarningAction SilentlyContinue
+            $settings.auth | Should -Be 'NavUserPassword'
+            ($warnings -join [Environment]::NewLine) | Should -Match "'defaultAuth' is ignored because 'auth' is set"
+        }
+
+        It 'reads artifact.url and rejects other artifact forms' {
+            $path = Join-Path $TestDrive 'artifact-settings.json'
+            Set-Content -LiteralPath $path -Value '{ "artifact": { "url": "https://cdn/onprem/9.0.50357.0/na" } }'
+            (Get-NAVGitUserSettings -Path $path).artifact.url | Should -Be 'https://cdn/onprem/9.0.50357.0/na'
+
+            Set-Content -LiteralPath $path -Value '{ "artifact": { "nav": "2016" } }'
+            { Get-NAVGitUserSettings -Path $path } | Should -Throw '*artifact must be*'
+            Set-Content -LiteralPath $path -Value '{ "artifact": "https://cdn/onprem/9.0.50357.0/na" }'
+            { Get-NAVGitUserSettings -Path $path } | Should -Throw '*artifact must be*'
         }
 
         It 'uses NAVGIT_SETTINGS_PATH when set' {
@@ -121,19 +151,17 @@ InModuleScope NAVGit {
         }
 
         Context 'isolation precedence' {
-            It 'uses navgit.json first' {
+            It 'lets the user setting win over navgit.json' {
                 $repo = New-TestRepository -Config @{ isolation = 'process' }
-                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ defaultIsolation = 'hyperv' })).isolation | Should -Be 'process'
-            }
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ isolation = 'hyperv' })).isolation | Should -Be 'hyperv'
 
-            It 'keeps an explicit empty isolation from navgit.json' {
                 $repo = New-TestRepository -Config @{ isolation = '' }
-                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ defaultIsolation = 'hyperv' })).isolation | Should -Be ''
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ isolation = 'hyperv' })).isolation | Should -Be 'hyperv'
             }
 
-            It 'falls back to the user defaultIsolation' {
-                $repo = New-TestRepository
-                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ defaultIsolation = 'hyperv' })).isolation | Should -Be 'hyperv'
+            It 'uses navgit.json when the user setting is empty' {
+                $repo = New-TestRepository -Config @{ isolation = 'process' }
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).isolation | Should -Be 'process'
             }
 
             It 'defaults to empty (BcContainerHelper decides)' {
@@ -152,13 +180,17 @@ InModuleScope NAVGit {
                 (Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings)).showBcContainerCommand | Should -BeFalse
             }
 
-            It 'takes the user setting as default' {
+            It 'uses the user setting when navgit.json has none' {
                 (Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings @{ showBcContainerCommand = $true })).showBcContainerCommand | Should -BeTrue
             }
 
-            It 'lets navgit.json win over the user setting' {
+            It 'lets the user setting win over navgit.json, also when it is false' {
                 $repo = New-TestRepository -Config @{ showBcContainerCommand = $false }
-                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ showBcContainerCommand = $true })).showBcContainerCommand | Should -BeFalse
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ showBcContainerCommand = $true })).showBcContainerCommand | Should -BeTrue
+
+                $repo = New-TestRepository -Config @{ showBcContainerCommand = $true }
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ showBcContainerCommand = $false })).showBcContainerCommand | Should -BeFalse
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).showBcContainerCommand | Should -BeTrue
             }
 
             It 'rejects non-boolean values' {
@@ -207,17 +239,39 @@ InModuleScope NAVGit {
             }
         }
 
-        Context 'auth default' {
-            It 'uses the user defaultAuth' {
-                Get-NAVGitDefaultAuth -UserSettings (New-TestUserSettings @{ defaultAuth = 'Windows' }) -UserDomain 'AzureAD' | Should -Be 'Windows'
+        Context 'auth' {
+            It 'lets the user setting win over navgit.json' {
+                $repo = New-TestRepository -Config @{ auth = 'Windows' }
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ auth = 'NavUserPassword' })).auth | Should -Be 'NavUserPassword'
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).auth | Should -Be 'Windows'
             }
 
-            It 'uses NavUserPassword for Azure AD accounts' {
-                Get-NAVGitDefaultAuth -UserSettings (New-TestUserSettings) -UserDomain 'AzureAD' | Should -Be 'NavUserPassword'
+            It 'defaults to NavUserPassword for Azure AD accounts' {
+                Get-NAVGitDefaultAuth -UserDomain 'AzureAD' | Should -Be 'NavUserPassword'
             }
 
-            It 'uses Windows otherwise' {
-                Get-NAVGitDefaultAuth -UserSettings (New-TestUserSettings) -UserDomain 'CONTOSO' | Should -Be 'Windows'
+            It 'defaults to Windows otherwise' {
+                Get-NAVGitDefaultAuth -UserDomain 'CONTOSO' | Should -Be 'Windows'
+            }
+        }
+
+        Context 'artifact' {
+            It 'replaces the navgit.json artifact with the user artifact.url' {
+                $url = 'https://cdn/onprem/9.0.50357.0/na'
+                $config = Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings @{ artifact = @{ url = $url } })
+                $config.artifact.url | Should -Be $url
+                @($config.artifact.Keys) | Should -Be @('url')
+            }
+
+            It 'uses navgit.json when the user setting is not set' {
+                $repo = New-TestRepository -Config @{ artifact = @{ nav = '2016'; cu = 'cu32'; country = 'na' } }
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).artifact.nav | Should -Be '2016'
+            }
+
+            It 'still validates the navgit.json artifact' {
+                $repo = New-TestRepository -Config @{ artifact = @{ nav = '2099' } }
+                { Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ artifact = @{ url = 'https://cdn/onprem/9.0.50357.0/na' } }) } |
+                    Should -Throw "*'artifact.nav'*"
             }
         }
 
@@ -244,7 +298,7 @@ InModuleScope NAVGit {
     Describe 'Assert-NAVGitConfig' {
         BeforeAll {
             function Get-ValidConfig {
-                $config = Merge-NAVGitHashtable -Base (Get-NAVGitDefaultConfig -UserSettings (New-TestUserSettings)) -Override @{
+                $config = Merge-NAVGitHashtable -Base (Get-NAVGitDefaultConfig) -Override @{
                     projectName   = 'Cust'
                     containerName = 'Cust'
                     artifact      = @{ nav = '2018' }

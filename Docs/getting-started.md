@@ -37,7 +37,7 @@ use the extension. See [vscode-extension.md](vscode-extension.md#installation).
 
 1. **Create `navgit.json`** in the repository root:
    - from an AdvaniaGIT repository: `ConvertFrom-AdvaniaGitSetup -WhatIf`, then without `-WhatIf`;
-   - from scratch: `New-NAVGitConfig -Nav 2018 -Cu cu30 -Country no -BakFile C:\Backups\Customer.bak`;
+   - from scratch: `New-NAVGitConfig -Nav 2016 -Cu cu32 -Country na -BakFile C:\NAVGit\2016-Contoso.bak`;
    - or in VS Code: *NAVGit: Create navgit.json*.
 
    See [configuration.md](configuration.md) for every setting.
@@ -47,8 +47,8 @@ use the extension. See [vscode-extension.md](vscode-extension.md#installation).
 
    ```json
    {
-     "backupFolder": "C:\\AdvaniaGIT\\Backup",
-     "licenseFolder": "C:\\AdvaniaGIT\\License"
+     "backupFolder": "C:\\NAVGIT\\Backup",
+     "licenseFolder": "C:\\NAVGIT\\License"
    }
    ```
 

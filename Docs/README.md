@@ -20,16 +20,18 @@ day-to-day work: building containers, importing and exporting objects, compiling
 | File | Scope | In Git | Purpose |
 | --- | --- | --- | --- |
 | `navgit.json` | repository | yes | What to build: artifact, database, license, container options, folders, import/export behaviour |
-| `%APPDATA%\NAVGit\settings.json` | user / machine | no | Where things are on this machine, personal defaults |
+| `%APPDATA%\NAVGit\settings.json` | user / machine | no | Where things are on this machine, personal overrides |
 
-How they combine:
+How they combine: **a user setting that is set always wins over `navgit.json`.**
 
 | Setting | navgit.json | settings.json | Winner |
 | --- | --- | --- | --- |
-| Authentication | `auth` | `defaultAuth` | navgit.json; settings.json is the default |
-| Isolation | `isolation` | `defaultIsolation` | navgit.json; settings.json is the default |
-| Show the container command | `showBcContainerCommand` | `showBcContainerCommand` | navgit.json; settings.json is the default |
+| Authentication | `auth` | `auth` | **settings.json** when set |
+| Isolation | `isolation` | `isolation` | **settings.json** when set |
+| Show the container command | `showBcContainerCommand` | `showBcContainerCommand` | **settings.json** when set |
 | Objects missing from Git | `import.deleteMissing` | `deleteMissing` | **settings.json** when set |
+| Container name | `containerName` | `containerName` | **settings.json** when set |
+| Artifact | `artifact` | `artifact.url` | **settings.json** when set |
 | Backup location | `database.bakFile` | `backupFolder` | `bakFile`; relative paths are tried in the repository, then in `backupFolder` |
 | License location | `licenseFile` | `licenseFolder` | relative paths are tried in the repository, then in `licenseFolder` |
 

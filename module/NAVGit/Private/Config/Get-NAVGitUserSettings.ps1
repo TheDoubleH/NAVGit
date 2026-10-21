@@ -21,19 +21,23 @@ function Get-NAVGitUserSettings {
         [string] $Path = (Get-NAVGitUserSettingsPath)
     )
 
+    # Every setting except the folders and the BcContainerHelper pin overrides navgit.json when it is set.
     $settings = @{
         backupFolder             = ''
         licenseFolder            = ''
-        defaultAuth              = ''
-        defaultIsolation         = ''
         bcContainerHelperVersion = ''
-        # Personal default; navgit.json wins when it sets showBcContainerCommand.
-        showBcContainerCommand   = $false
-        # Personal override; wins over import.deleteMissing in navgit.json when set.
+        auth                     = ''
+        isolation                = ''
+        # $null = not set; navgit.json (or the default) is used.
+        showBcContainerCommand   = $null
         deleteMissing            = ''
-        # Personal override; wins over containerName in navgit.json when set. A name or an object (see navgit.json).
+        # A name or an object (see navgit.json).
         containerName            = ''
+        # @{ url = '<artifact url>' } or $null.
+        artifact                 = $null
     }
+    # Earlier names, from when these settings were only defaults.
+    $renamedKeys = @{ defaultAuth = 'auth'; defaultIsolation = 'isolation' }
     $booleanKeys = @('showBcContainerCommand')
 
     if (Test-Path -LiteralPath $Path -PathType Leaf) {
@@ -47,16 +51,25 @@ function Get-NAVGitUserSettings {
             throw "NAVGit user settings '$Path' must contain a JSON object."
         }
 
-        foreach ($key in $fileSettings.Keys) {
+        foreach ($fileKey in $fileSettings.Keys) {
+            $key = $fileKey
+            if ($renamedKeys.ContainsKey($fileKey)) {
+                $key = $renamedKeys[$fileKey]
+                if ($fileSettings.ContainsKey($key)) {
+                    Write-Warning "NAVGit user settings '$Path': '$fileKey' is ignored because '$key' is set."
+                    continue
+                }
+                Write-Warning "NAVGit user settings '$Path': '$fileKey' is now called '$key'; rename it."
+            }
             if (-not $settings.ContainsKey($key)) {
                 Write-Warning "NAVGit user settings '$Path': unknown setting '$key' is ignored."
                 continue
             }
             if ($booleanKeys -contains $key) {
-                if ($fileSettings[$key] -isnot [bool]) {
-                    throw "NAVGit user settings '$Path': $key must be true or false (was '$($fileSettings[$key])')."
+                if ($fileSettings[$fileKey] -isnot [bool]) {
+                    throw "NAVGit user settings '$Path': $key must be true or false (was '$($fileSettings[$fileKey])')."
                 }
-                $settings[$key] = $fileSettings[$key]
+                $settings[$key] = $fileSettings[$fileKey]
                 continue
             }
             if ($key -eq 'containerName' -and $fileSettings[$key] -is [hashtable]) {
@@ -69,14 +82,27 @@ function Get-NAVGitUserSettings {
                 $settings[$key] = $fileSettings[$key]
                 continue
             }
-            $settings[$key] = [string]$fileSettings[$key]
+            if ($key -eq 'artifact') {
+                $artifact = $fileSettings[$key]
+                if ($artifact -isnot [hashtable] -or -not ($artifact.url -is [string] -and $artifact.url -match '^https://')) {
+                    throw "NAVGit user settings '$Path': artifact must be { `"url`": `"https://...`" }."
+                }
+                foreach ($subKey in $artifact.Keys) {
+                    if ($subKey -ne 'url') {
+                        Write-Warning "NAVGit user settings '$Path': unknown setting 'artifact.$subKey' is ignored."
+                    }
+                }
+                $settings[$key] = @{ url = $artifact.url }
+                continue
+            }
+            $settings[$key] = [string]$fileSettings[$fileKey]
         }
 
-        if ($settings.defaultAuth -and $settings.defaultAuth -notin @('Windows', 'NavUserPassword')) {
-            throw "NAVGit user settings '$Path': defaultAuth must be 'Windows' or 'NavUserPassword' (was '$($settings.defaultAuth)')."
+        if ($settings.auth -and $settings.auth -notin @('Windows', 'NavUserPassword')) {
+            throw "NAVGit user settings '$Path': auth must be 'Windows' or 'NavUserPassword' (was '$($settings.auth)')."
         }
-        if ($settings.defaultIsolation -and $settings.defaultIsolation -notin @('hyperv', 'process')) {
-            throw "NAVGit user settings '$Path': defaultIsolation must be 'hyperv', 'process' or empty (was '$($settings.defaultIsolation)')."
+        if ($settings.isolation -and $settings.isolation -notin @('hyperv', 'process')) {
+            throw "NAVGit user settings '$Path': isolation must be 'hyperv', 'process' or empty (was '$($settings.isolation)')."
         }
         if ($settings.deleteMissing -and $settings.deleteMissing -notin @('skip', 'warn', 'mark')) {
             throw "NAVGit user settings '$Path': deleteMissing must be 'skip', 'warn', 'mark' or empty (was '$($settings.deleteMissing)')."
