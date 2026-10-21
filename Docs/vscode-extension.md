@@ -19,7 +19,7 @@ To build and install it from source instead:
 cd C:\Repos\NAVGit\vscode
 npm install
 npm run package
-code --install-extension navgit-1.1.0.vsix
+code --install-extension navgit-1.2.0.vsix
 ```
 
 The extension activates when the workspace contains a `navgit.json` or an AdvaniaGIT `setup.json`.
