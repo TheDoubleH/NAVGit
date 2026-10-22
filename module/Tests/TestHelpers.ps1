@@ -42,6 +42,7 @@ function New-TestUserSettings {
         deleteMissing            = ''
         containerName            = ''
         artifact                 = $null
+        uidOffset                = ''
         settingsPath             = 'TestDrive:\settings.json'
     }
     foreach ($key in $Settings.Keys) { $result[$key] = $Settings[$key] }

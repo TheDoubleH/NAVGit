@@ -61,6 +61,10 @@ function New-NAVGitContainer {
     if (-not $state.clientFolder) {
         Write-NAVGitLog "The Windows client was not found on the host; Start Client and Start FinSql will not work for '$($config.containerName)'." -Level Warning
     }
+    if ($config.userSettings.uidOffset) {
+        Write-NAVGitLog "Setting the Uid Offset to $($config.userSettings.uidOffset)" -Level Detail
+        Set-NAVGitUidOffset -ContainerName $config.containerName -UidOffset ([int]$config.userSettings.uidOffset)
+    }
     if ($plan.AddInsFolder) {
         Sync-NAVGitAddIns -ContainerName $config.containerName -AddInsFolder $plan.AddInsFolder -ClientFolder $state.clientFolder
     }

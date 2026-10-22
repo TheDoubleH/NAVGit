@@ -324,6 +324,20 @@ InModuleScope NAVGit {
             Should -Invoke New-BcContainer -Times 1 -Exactly
         }
 
+        It 'leaves the Uid Offset alone by default' {
+            Mock Set-NAVGitUidOffset { }
+            New-NAVGitContainer -Path $repo
+            Should -Invoke Set-NAVGitUidOffset -Times 0 -Exactly
+        }
+
+        It 'sets the Uid Offset from the user settings' {
+            Mock Set-NAVGitUidOffset { }
+            Set-Content -LiteralPath $env:NAVGIT_SETTINGS_PATH -Value '{ "uidOffset": "50100" }'
+            try { New-NAVGitContainer -Path $repo }
+            finally { Remove-Item -LiteralPath $env:NAVGIT_SETTINGS_PATH }
+            Should -Invoke Set-NAVGitUidOffset -Times 1 -Exactly -ParameterFilter { $ContainerName -eq 'Customer-NAV201' -and $UidOffset -eq 50100 }
+        }
+
         It 'does not create anything with -WhatIf' {
             New-NAVGitContainer -Path $repo -WhatIf
 

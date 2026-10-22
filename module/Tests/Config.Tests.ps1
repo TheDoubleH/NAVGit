@@ -113,6 +113,19 @@ InModuleScope NAVGit {
             { Get-NAVGitUserSettings -Path $path } | Should -Throw '*artifact must be*'
         }
 
+        It 'reads uidOffset as a string or a number and rejects anything else' {
+            $path = Join-Path $TestDrive 'uid-settings.json'
+            Set-Content -LiteralPath $path -Value '{ "uidOffset": "50100" }'
+            (Get-NAVGitUserSettings -Path $path).uidOffset | Should -Be '50100'
+            Set-Content -LiteralPath $path -Value '{ "uidOffset": 50100 }'
+            (Get-NAVGitUserSettings -Path $path).uidOffset | Should -Be '50100'
+
+            foreach ($value in @('"abc"', '"-1"', '"50100.5"', '"9999999999"')) {
+                Set-Content -LiteralPath $path -Value "{ `"uidOffset`": $value }"
+                { Get-NAVGitUserSettings -Path $path } | Should -Throw '*uidOffset must be*'
+            }
+        }
+
         It 'uses NAVGIT_SETTINGS_PATH when set' {
             $env:NAVGIT_SETTINGS_PATH = 'X:\custom\settings.json'
             try { Get-NAVGitUserSettingsPath | Should -Be 'X:\custom\settings.json' }

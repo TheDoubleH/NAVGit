@@ -21,7 +21,7 @@ function Get-NAVGitUserSettings {
         [string] $Path = (Get-NAVGitUserSettingsPath)
     )
 
-    # Every setting except the folders and the BcContainerHelper pin overrides navgit.json when it is set.
+    # Every setting except the folders, the BcContainerHelper pin and uidOffset overrides navgit.json when it is set.
     $settings = @{
         backupFolder             = ''
         licenseFolder            = ''
@@ -35,6 +35,8 @@ function Get-NAVGitUserSettings {
         containerName            = ''
         # @{ url = '<artifact url>' } or $null.
         artifact                 = $null
+        # C/SIDE Uid Offset written to the database after a build; '' = leave the backup's value.
+        uidOffset                = ''
     }
     # Earlier names, from when these settings were only defaults.
     $renamedKeys = @{ defaultAuth = 'auth'; defaultIsolation = 'isolation' }
@@ -106,6 +108,10 @@ function Get-NAVGitUserSettings {
         }
         if ($settings.deleteMissing -and $settings.deleteMissing -notin @('skip', 'warn', 'mark')) {
             throw "NAVGit user settings '$Path': deleteMissing must be 'skip', 'warn', 'mark' or empty (was '$($settings.deleteMissing)')."
+        }
+        $uidOffset = 0
+        if ($settings.uidOffset -and -not ($settings.uidOffset -match '^\d+$' -and [int]::TryParse($settings.uidOffset, [ref]$uidOffset))) {
+            throw "NAVGit user settings '$Path': uidOffset must be a whole number from 0 to 2147483647 or empty (was '$($settings.uidOffset)')."
         }
     }
 
