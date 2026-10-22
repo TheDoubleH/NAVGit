@@ -58,7 +58,7 @@ function Invoke-NAVGitCommand {
             $result = & $definition.Function @params 3>$null 6>$null
         }
         else {
-            Write-NAVGitLog "NAVGit: $($definition.Description) ($Repository)" -Level Step
+            Write-NAVGitLog "NAVGit $($MyInvocation.MyCommand.Module.Version): $($definition.Description) ($Repository)" -Level Step
             $null = & $definition.Function @params
         }
 
