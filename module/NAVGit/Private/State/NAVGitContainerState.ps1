@@ -33,6 +33,7 @@ function Save-NAVGitContainerState {
     .SYNOPSIS
         Reads the container's server configuration (requires elevation and BcContainerHelper) and saves everything the
         client commands need, so those can later run without elevation or docker access.
+        testsImported is only written when -TestsImported is given; see Test-NAVGitTestsImported.
     #>
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -42,7 +43,9 @@ function Save-NAVGitContainerState {
 
         [string] $ArtifactUrl,
 
-        [string] $BackupPath
+        [string] $BackupPath,
+
+        [bool] $TestsImported
     )
 
     $containerName = $Config.containerName
@@ -75,12 +78,72 @@ function Save-NAVGitContainerState {
         clientFolder           = Get-NAVGitClientFolder -ContainerName $containerName
         savedAt                = (Get-Date).ToString('o')
     }
+    if ($PSBoundParameters.ContainsKey('TestsImported')) {
+        $state.testsImported = $TestsImported
+    }
 
     $path = Get-NAVGitContainerStatePath -ContainerName $containerName
     $state | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $path -Encoding UTF8
     Write-NAVGitLog "Container state saved to $path" -Level Detail
 
     return Get-NAVGitContainerState -ContainerName $containerName
+}
+
+function Set-NAVGitContainerStateValue {
+    <#
+    .SYNOPSIS
+        Sets one value in the saved state of a container. Does nothing when there is no saved state: a partial state
+        file would make the client commands fail with a misleading message.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $ContainerName,
+
+        [Parameter(Mandatory)]
+        [string] $Name,
+
+        $Value
+    )
+
+    $path = Get-NAVGitContainerStatePath -ContainerName $ContainerName
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        Write-NAVGitLog "No saved state for '$ContainerName', so $Name was not saved. Run Update-NAVGitContainerState to create it." -Level Detail
+        return
+    }
+
+    # Kept as PSCustomObject so the property order of the file stays the same.
+    $state = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+    $current = $state.PSObject.Properties[$Name]
+    if ($current -and $current.Value -eq $Value) {
+        return
+    }
+    $state | Add-Member -NotePropertyName $Name -NotePropertyValue $Value -Force
+    $state | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $path -Encoding UTF8
+}
+
+function Test-NAVGitTestsImported {
+    <#
+    .SYNOPSIS
+        True when the objects in the Tests folder have been imported into the container (testsImported in the saved
+        state, set by Import-NAVGitObjects and Import-NAVGitTestToolkit). Without the value - a state saved by an
+        older NAVGit, or no state at all - includeTestToolkit decides, as that is what earlier imports went by.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)]
+        [string] $ContainerName,
+
+        [Parameter(Mandatory)]
+        [hashtable] $Config
+    )
+
+    $state = Get-NAVGitContainerState -ContainerName $ContainerName
+    if ($state -and $state.ContainsKey('testsImported')) {
+        return [bool]$state.testsImported
+    }
+    return [bool]$Config.includeTestToolkit
 }
 
 function Remove-NAVGitContainerState {

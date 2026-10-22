@@ -10,7 +10,9 @@ function Import-NAVGitObjects {
         verbose output, 'warn' lists them, 'mark' sets their Version List to '#DELETE' and lists them. A deleteMissing
         in the user settings overrides the repository's.
         Test objects (the Tests folder) need the test toolkit, so they are only imported when includeTestToolkit is
-        set in navgit.json, or with -IncludeTests. They are always read, so they never count as missing.
+        set in navgit.json, with -IncludeTests, or when they were imported into this container before (by this
+        command or Import-NAVGitTestToolkit). They are always read, so they never count as missing.
+        Importing them is saved in the container state, so Export-NAVGitObjects knows it may delete missing test files.
     .PARAMETER Path
         Repository folder (or any folder/file inside it). Default: current location.
     .PARAMETER Force
@@ -31,46 +33,24 @@ function Import-NAVGitObjects {
     $config = $context.Config
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
-    Write-NAVGitLog "Reading objects from $($config.objectsPath) and $($config.testsPath)" -Level Step
-    $repoObjects = @(Get-NAVGitRepoObjects -Config $config)
-    Write-NAVGitLog "Reading objects from container '$($context.ContainerName)'" -Level Step
-    $dbObjects = @(Get-NAVGitDbObjects -ContainerName $context.ContainerName)
+    # Once the test objects are in the container, keep them current: an export would otherwise write the older
+    # versions from the database back over the changes in Git.
+    $includeTests = $IncludeTests -or $config.includeTestToolkit -or
+        (Test-NAVGitTestsImported -ContainerName $context.ContainerName -Config $config)
 
-    $comparison = Compare-NAVGitObjects -RepoObjects $repoObjects -DbObjects $dbObjects -DateFormat $config.import.dateFormat -Force:$Force
-
-    # Test objects need the test toolkit; without it they would only fail to compile.
-    $toImport = @($comparison.ToImport)
-    $skippedTests = @()
-    if (-not ($config.includeTestToolkit -or $IncludeTests)) {
-        $skippedTests = @($toImport | Where-Object { Test-NAVGitPathInFolder -Path $_.Path -Folder $config.testsPath })
-        $toImport = @($toImport | Where-Object { -not (Test-NAVGitPathInFolder -Path $_.Path -Folder $config.testsPath) })
+    $import = Import-NAVGitChangedObjects -Context $context -IncludeTests:$includeTests -Force:$Force
+    $toImport = @($import.Imported)
+    $skippedTests = @($import.SkippedTests)
+    if ($includeTests) {
+        Set-NAVGitContainerStateValue -ContainerName $context.ContainerName -Name 'testsImported' -Value $true
     }
 
-    Write-NAVGitLog "$($repoObjects.Count) objects in Git: $($toImport.Count) to import, $($comparison.Unchanged.Count) unchanged"
     if ($skippedTests.Count -gt 0) {
-        Write-NAVGitLog "$($skippedTests.Count) changed test object(s) in $($config.paths.tests) are not imported because includeTestToolkit is off. Set `"includeTestToolkit`": true in navgit.json, or import the toolkit and use -IncludeTests." -Level Warning
-    }
-    if ($comparison.Unparsed -gt 0) {
-        Write-NAVGitLog "$($comparison.Unparsed) object(s) had a Date/Time that could not be read and are imported anyway. Set import.dateFormat (e.g. 'dd.MM.yy') if this happens for every object." -Level Warning
+        Write-NAVGitLog "$($skippedTests.Count) changed test object(s) in $($config.paths.tests) are not imported because includeTestToolkit is off. Run Import Test Toolkit, which also imports them, or set `"includeTestToolkit`": true in navgit.json." -Level Warning
     }
 
     $uncompiled = @()
-    if ($toImport.Count -gt 0) {
-        $staging = Get-NAVGitStagingFolder -ContainerName $context.ContainerName
-        try {
-            $importFile = Join-Path $staging 'import.txt'
-            Join-NAVGitObjectFiles -Path @($toImport | ForEach-Object { $_.Path }) -Destination $importFile
-
-            Write-NAVGitLog "Importing $($toImport.Count) object(s)" -Level Step
-            Import-ObjectsToNavContainer -containerName $context.ContainerName -objectsFile $importFile `
-                -sqlCredential $context.SqlCredential -ImportAction Overwrite -SynchronizeSchemaChanges $config.import.syncSchema
-        }
-        finally {
-            Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
-        }
-    }
-
-    $missing = @($comparison.Missing | Where-Object { $_.VersionList -ne '#DELETE' })
+    $missing = @($import.Missing | Where-Object { $_.VersionList -ne '#DELETE' })
     if ($missing.Count -gt 0) {
         $list = ($missing | Select-Object -First 25 | ForEach-Object { "  $($_.Type) $($_.Id) $($_.Name)" }) -join [Environment]::NewLine
         switch ($config.import.deleteMissing) {
@@ -96,20 +76,9 @@ function Import-NAVGitObjects {
     Write-NAVGitLog ("Import finished ({0:mm\:ss})" -f $stopwatch.Elapsed) -Level Success
     return [pscustomobject]@{
         Imported     = $toImport.Count
-        Unchanged    = $comparison.Unchanged.Count
+        Unchanged    = $import.Unchanged.Count
         SkippedTests = $skippedTests.Count
         Missing      = $missing.Count
         Uncompiled   = $uncompiled.Count
     }
-}
-
-function Test-NAVGitPathInFolder {
-    # True when the file is directly inside the folder (object folders are flat).
-    param(
-        [Parameter(Mandatory)] [string] $Path,
-        [Parameter(Mandatory)] [string] $Folder
-    )
-
-    $parent = [System.IO.Path]::GetFullPath((Split-Path -Path $Path -Parent)).TrimEnd('\')
-    return $parent -ieq [System.IO.Path]::GetFullPath($Folder).TrimEnd('\')
 }

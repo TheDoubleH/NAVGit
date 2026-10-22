@@ -4,8 +4,10 @@ function Sync-NAVGitObjectFolder {
         Mirrors exported object files into the repository: each file goes to the Objects or Tests folder
         (Get-NAVGitObjectTargetFolder). New and changed files are copied byte for byte, a copy left in the other
         folder is removed (the object moved), and - with -RemoveMissing - object files that were not exported are
-        deleted. Only files named like object files (TAB18.TXT) are touched.
-        Returns [pscustomobject]@{ Added; Changed; Moved; Removed; Unchanged; Tests } (lists of file names).
+        deleted. -KeepMissingTests keeps those in the Tests folder (returned as Kept): when the test objects were never
+        imported, their absence from the database means nothing. Only files named like object files (TAB18.TXT) are
+        touched.
+        Returns [pscustomobject]@{ Added; Changed; Moved; Removed; Kept; Unchanged; Tests } (lists of file names).
     #>
     [CmdletBinding()]
     param(
@@ -21,10 +23,12 @@ function Sync-NAVGitObjectFolder {
         [Parameter(Mandatory)]
         [hashtable] $TestObjects,
 
-        [switch] $RemoveMissing
+        [switch] $RemoveMissing,
+
+        [switch] $KeepMissingTests
     )
 
-    $result = [ordered]@{ Added = @(); Changed = @(); Moved = @(); Removed = @(); Unchanged = @(); Tests = @() }
+    $result = [ordered]@{ Added = @(); Changed = @(); Moved = @(); Removed = @(); Kept = @(); Unchanged = @(); Tests = @() }
     $folders = @{ Objects = $ObjectsPath; Tests = $TestsPath }
     foreach ($folder in $folders.Values) {
         if (-not (Test-Path -LiteralPath $folder -PathType Container)) {
@@ -66,12 +70,16 @@ function Sync-NAVGitObjectFolder {
     }
 
     if ($RemoveMissing) {
-        foreach ($folder in $folders.Values) {
-            foreach ($file in (Get-NAVGitObjectFiles -Folder $folder)) {
-                if (-not $exported.ContainsKey($file.Name.ToUpperInvariant())) {
-                    Remove-Item -LiteralPath $file.FullName -Force
-                    $result.Removed += $file.Name.ToUpperInvariant()
+        foreach ($target in @('Objects', 'Tests')) {
+            foreach ($file in (Get-NAVGitObjectFiles -Folder $folders[$target])) {
+                $name = $file.Name.ToUpperInvariant()
+                if ($exported.ContainsKey($name)) { continue }
+                if ($target -eq 'Tests' -and $KeepMissingTests) {
+                    $result.Kept += $name
+                    continue
                 }
+                Remove-Item -LiteralPath $file.FullName -Force
+                $result.Removed += $name
             }
         }
     }

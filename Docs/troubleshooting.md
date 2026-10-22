@@ -23,7 +23,7 @@ Add `-Verbose` to any command for detail messages (resolved artifact, overrides,
 | `No container information for '…'` | The container was not built by NAVGit; run `Update-NAVGitContainerState` (elevated). |
 | `The Windows client for '…' was not found on this machine` | The container was built without `-includeCSide`; rebuild it with NAVGit. |
 | `Container '…' does not answer on port …` (warning) | The container is stopped (`docker start <name>`) or not in the hosts file (`updateHosts`). |
-| `… changed test object(s) in Tests are not imported because includeTestToolkit is off` | Set `includeTestToolkit: true`, or run *Import Test Toolkit* and then `Import-NAVGitObjects -IncludeTests`. |
+| `… changed test object(s) in Tests are not imported because includeTestToolkit is off` | Run *Import Test Toolkit*, which imports the test objects too, or set `includeTestToolkit: true`. |
 | `… object(s) had a Date/Time that could not be read and are imported anyway` | If it happens for all objects, set `import.dateFormat`. |
 | Every object is re-imported on each run | Usually a date format mismatch: set `import.dateFormat`. |
 | `… exists twice: '…' and '…'` | The same object is in both `Objects` and `Tests` (or twice in one). Delete one copy. |

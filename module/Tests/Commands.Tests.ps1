@@ -17,6 +17,14 @@ InModuleScope NAVGit {
             }
             Mock Import-TestToolkitToBcContainer { }
             Mock Invoke-NAVGitContainerCompile { @() }
+            Mock Get-NAVGitDbObjects { @() }
+            Mock Get-NAVGitStagingFolder { $staging }
+            Mock Import-ObjectsToNavContainer { $script:importedFile = [System.IO.File]::ReadAllText($objectsFile) }
+            Mock Invoke-NAVGitForceSync { }
+            Mock Set-NAVGitContainerStateValue { }
+            $staging = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $staging | Out-Null
+            $script:importedFile = $null
         }
 
         It 'imports the toolkit with the configured country and compiles' {
@@ -27,6 +35,35 @@ InModuleScope NAVGit {
             }
             Should -Invoke Invoke-NAVGitContainerCompile -Times 1 -Exactly
             $result.Uncompiled | Should -Be 0
+        }
+
+        It 'imports only the test objects from Git and records that they are imported' {
+            $null = New-TestObjectFile -Folder $config.objectsPath -Id 18
+            $null = New-TestObjectFile -Folder $config.testsPath -Type Codeunit -Id 50100 -VersionList 'Test'
+
+            $result = Import-NAVGitTestToolkit -Path $repo
+
+            $result.ImportedTests | Should -Be 1
+            $script:importedFile | Should -Match 'OBJECT Codeunit 50100'
+            $script:importedFile | Should -Not -Match 'OBJECT Table 18'
+            Should -Invoke Set-NAVGitContainerStateValue -Times 1 -Exactly -ParameterFilter { $ContainerName -eq 'cust' -and $Name -eq 'testsImported' -and $Value -eq $true }
+            Should -Invoke Invoke-NAVGitForceSync -Times 1 -Exactly
+        }
+
+        It 'records that the test objects are imported also when none changed' {
+            $result = Import-NAVGitTestToolkit -Path $repo
+
+            $result.ImportedTests | Should -Be 0
+            Should -Invoke Import-ObjectsToNavContainer -Times 0 -Exactly
+            Should -Invoke Set-NAVGitContainerStateValue -Times 1 -Exactly
+        }
+
+        It 'does not record anything when importing the test objects fails' {
+            $null = New-TestObjectFile -Folder $config.testsPath -Type Codeunit -Id 50100 -VersionList 'Test'
+            Mock Import-ObjectsToNavContainer { throw 'finsql failed' }
+
+            { Import-NAVGitTestToolkit -Path $repo } | Should -Throw '*finsql failed*'
+            Should -Invoke Set-NAVGitContainerStateValue -Times 0 -Exactly
         }
 
         It 'imports only the libraries with -LibrariesOnly' {

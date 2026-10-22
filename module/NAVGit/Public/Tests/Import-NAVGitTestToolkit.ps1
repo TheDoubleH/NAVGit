@@ -1,11 +1,14 @@
 function Import-NAVGitTestToolkit {
     <#
     .SYNOPSIS
-        Import Test Toolkit: imports the standard C/AL test toolkit (.fob files shipped in the container) and compiles.
+        Import Test Toolkit: imports the standard C/AL test toolkit (.fob files shipped in the container), then the
+        repository's test objects, and compiles.
     .DESCRIPTION
         Uses Import-TestToolkitToBcContainer, which imports C:\TestToolKit\*.fob in the container and force-syncs.
         testToolkit.librariesOnly imports only the test libraries; testToolkit.country picks a localized toolkit.
-        Afterwards uncompiled objects are compiled, so objects in the Tests folder that needed the toolkit compile too.
+        Then the new and changed objects in the Tests folder are imported, uncompiled objects are compiled and the
+        container state records that the test objects are imported: later imports keep them current, and
+        Export-NAVGitObjects may delete test files whose objects were deleted.
     .PARAMETER Path
         Repository folder (or any folder/file inside it). Default: current location.
     .PARAMETER LibrariesOnly
@@ -39,8 +42,14 @@ function Import-NAVGitTestToolkit {
     Write-NAVGitLog "Importing the $what into '$($context.ContainerName)'" -Level Step
     Import-TestToolkitToBcContainer @params
 
-    $uncompiled = @(Invoke-NAVGitContainerCompile -Context $context)
+    $import = Import-NAVGitChangedObjects -Context $context -TestsOnly
+    Set-NAVGitContainerStateValue -ContainerName $context.ContainerName -Name 'testsImported' -Value $true
 
-    Write-NAVGitLog ("Test toolkit imported ({0:mm\:ss})" -f $stopwatch.Elapsed) -Level Success
-    return [pscustomobject]@{ Uncompiled = $uncompiled.Count }
+    $uncompiled = @(Invoke-NAVGitContainerCompile -Context $context)
+    if ($import.Imported.Count -gt 0) {
+        Invoke-NAVGitForceSync -ContainerName $context.ContainerName
+    }
+
+    Write-NAVGitLog ("Test toolkit and $($import.Imported.Count) test object(s) imported ({0:mm\:ss})" -f $stopwatch.Elapsed) -Level Success
+    return [pscustomobject]@{ ImportedTests = $import.Imported.Count; Uncompiled = $uncompiled.Count }
 }
