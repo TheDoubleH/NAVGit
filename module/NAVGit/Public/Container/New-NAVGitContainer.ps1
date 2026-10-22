@@ -57,7 +57,8 @@ function New-NAVGitContainer {
     $parameters = $plan.Parameters
     New-BcContainer @parameters
 
-    $state = Save-NAVGitContainerState -Config $config -ArtifactUrl $plan.Artifact.Url -BackupPath $plan.Backup.Path
+    # A new database: nothing from the Tests folder is in it until Import-NAVGitObjects or Import-NAVGitTestToolkit.
+    $state = Save-NAVGitContainerState -Config $config -ArtifactUrl $plan.Artifact.Url -BackupPath $plan.Backup.Path -TestsImported $false
     if (-not $state.clientFolder) {
         Write-NAVGitLog "The Windows client was not found on the host; Start Client and Start FinSql will not work for '$($config.containerName)'." -Level Warning
     }

@@ -54,7 +54,8 @@ Modified flag, Date or Time differ. A Date or Time that cannot be parsed counts 
 are joined into one file and imported in one finsql run, so an import after a small change is quick.
 
 Objects in `paths.tests` are read every time, so they never count as "missing", but changed ones are imported only
-when `includeTestToolkit` is `true` or `-IncludeTests` is given.
+when `includeTestToolkit` is `true`, `-IncludeTests` is given, or they were imported into the container before
+(see [Container state](#container-state)). *Import Test Toolkit* imports them too.
 
 After importing, objects matching `import.compileFilter` are compiled inside the container, the uncompiled ones are
 listed (first 25), and the tenant is force-synchronized.
@@ -68,7 +69,9 @@ Objects are exported to a temporary folder shared with the container, split into
   codeunit (`includeTestCodeunits`), else to `paths.objects`.
 - A file is only written when its bytes differ from the file in Git.
 - A copy in the other folder is removed (the object moved category).
-- With a full export (no `export.filter`), files for objects that were not exported are deleted.
+- With a full export (no `export.filter`), files for objects that were not exported are deleted. Files in
+  `paths.tests` are kept until the test objects have been imported into the container: until then, a test object
+  missing from the database was never imported, not deleted.
 
 ## Credentials
 
@@ -90,6 +93,11 @@ After a build NAVGit reads the container's server configuration and saves it to
 `%LOCALAPPDATA%\NAVGit\containers\<containerName>.json`: artifact URL, version, backup, authentication, server
 instance, database server and name, client and management ports, symbol loading, and the host folder with the
 Windows client. The client commands use only this file, which is why they need neither elevation nor Docker.
+
+The file also records `testsImported`: whether the objects in `paths.tests` have been imported into this container.
+A new container starts at `false`; importing with tests or *Import Test Toolkit* sets it to `true`, and
+`Update-NAVGitContainerState` keeps it. Export only deletes files in `paths.tests` when it is `true`. Without the
+value (a file from an older NAVGit) `includeTestToolkit` decides.
 
 Containers built another way have no state file; run `Update-NAVGitContainerState` once (elevated).
 `Remove-NAVGitContainer` deletes the file.

@@ -279,6 +279,57 @@ InModuleScope NAVGit {
             Remove-NAVGitContainerState -ContainerName 'Customer-NAV201'
             Get-NAVGitContainerState -ContainerName 'Customer-NAV201' | Should -BeNullOrEmpty
         }
+
+        It 'only writes testsImported when it is given' {
+            $config = Get-TestConfig
+            (Save-NAVGitContainerState -Config $config).ContainsKey('testsImported') | Should -BeFalse
+            (Save-NAVGitContainerState -Config $config -TestsImported $false).testsImported | Should -BeFalse
+        }
+
+        It 'sets one value and keeps the rest' {
+            $config = Get-TestConfig
+            $null = Save-NAVGitContainerState -Config $config -BackupPath 'C:\b.bak' -TestsImported $false
+
+            Set-NAVGitContainerStateValue -ContainerName 'Customer-NAV201' -Name 'testsImported' -Value $true
+
+            $state = Get-NAVGitContainerState -ContainerName 'Customer-NAV201'
+            $state.testsImported | Should -BeTrue
+            $state.backupFile | Should -Be 'C:\b.bak'
+        }
+
+        It 'does not create a state when setting a value without one' {
+            Remove-NAVGitContainerState -ContainerName 'Customer-NAV201'
+            Set-NAVGitContainerStateValue -ContainerName 'Customer-NAV201' -Name 'testsImported' -Value $true
+            Get-NAVGitContainerState -ContainerName 'Customer-NAV201' | Should -BeNullOrEmpty
+        }
+
+        It 'tells whether the test objects are imported, falling back to includeTestToolkit' {
+            $config = Get-TestConfig @{ includeTestToolkit = $true }
+            Remove-NAVGitContainerState -ContainerName 'Customer-NAV201'
+            Test-NAVGitTestsImported -ContainerName 'Customer-NAV201' -Config $config | Should -BeTrue
+
+            $null = Save-NAVGitContainerState -Config $config
+            Test-NAVGitTestsImported -ContainerName 'Customer-NAV201' -Config $config | Should -BeTrue
+
+            Set-NAVGitContainerStateValue -ContainerName 'Customer-NAV201' -Name 'testsImported' -Value $false
+            Test-NAVGitTestsImported -ContainerName 'Customer-NAV201' -Config $config | Should -BeFalse
+        }
+
+        It 'Update-NAVGitContainerState keeps the backup and testsImported' {
+            Mock Assert-NAVGitAdministrator { }
+            Mock Assert-NAVGitBcContainerHelper { }
+            Mock Test-BcContainer { $true }
+            Mock Write-Host { }
+            $config = Get-TestConfig
+            Mock Get-NAVGitConfig { $config }
+            $null = Save-NAVGitContainerState -Config $config -BackupPath 'C:\b.bak' -TestsImported $true
+
+            Update-NAVGitContainerState -Path $config.repositoryPath
+
+            $state = Get-NAVGitContainerState -ContainerName 'Customer-NAV201'
+            $state.testsImported | Should -BeTrue
+            $state.backupFile | Should -Be 'C:\b.bak'
+        }
     }
 
     Describe 'New-NAVGitContainer' {
@@ -309,7 +360,7 @@ InModuleScope NAVGit {
                 $bakFile -eq $bak -and $imageName -eq 'navgit' -and $isolation -eq 'process' -and $includeCSide -and
                 $containerName -eq 'Customer-NAV201' -and -not $additionalParameters
             }
-            Should -Invoke Save-NAVGitContainerState -Times 1 -Exactly -ParameterFilter { $BackupPath -eq $bak }
+            Should -Invoke Save-NAVGitContainerState -Times 1 -Exactly -ParameterFilter { $BackupPath -eq $bak -and $TestsImported -eq $false }
         }
 
         It 'does not write the New-BcContainer command by default' {

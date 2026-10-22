@@ -136,6 +136,10 @@ containers not built by NAVGit (for example existing AdvaniaGIT containers) or r
 | `-Force` | Import every object file, also unchanged ones. |
 | `-IncludeTests` | Import the tests folder even when `includeTestToolkit` is `false`. |
 
+Once the tests folder has been imported into a container (with `includeTestToolkit`, `-IncludeTests` or
+[Import Test Toolkit](#import-navgittesttoolkit)), the container state records it and later imports include the
+tests folder automatically.
+
 Returns `Imported`, `Unchanged`, `SkippedTests`, `Missing`, `Uncompiled` counts.
 
 ### Export-NAVGitObjects
@@ -143,9 +147,11 @@ Returns `Imported`, `Unchanged`, `SkippedTests`, `Missing`, `Uncompiled` counts.
 *Export NAV objects to GIT.* Exports objects (all, or `export.filter`) one file per object and routes each to
 `paths.tests` or `paths.objects` according to [`testObjects`](configuration.md#test-object-detection). Files are
 compared byte for byte, so unchanged objects do not show up as Git changes. An object that changed category is
-moved. A full export also deletes files of objects that no longer exist.
+moved. A full export also deletes files of objects that no longer exist. Files in `paths.tests` are only deleted
+once the test objects have been imported into the container; before that they are kept (and listed as `Kept`),
+because they are simply not in the database.
 
-Returns lists of file names: `Added`, `Changed`, `Moved`, `Removed`, `Unchanged`, `Tests`.
+Returns lists of file names: `Added`, `Changed`, `Moved`, `Removed`, `Kept`, `Unchanged`, `Tests`.
 
 ### Invoke-NAVGitCompile
 
@@ -160,7 +166,11 @@ too), with `SynchronizeSchemaChanges` = `import.syncSchema`, then lists objects 
 ### Import-NAVGitTestToolkit
 
 *Import Test Toolkit.* Runs `Import-TestToolkitToBcContainer` (imports `C:\TestToolKit\*.fob` from the container),
-honouring `testToolkit.country` and `testToolkit.librariesOnly`, then compiles uncompiled objects.
+honouring `testToolkit.country` and `testToolkit.librariesOnly`. Then it imports the new and changed objects in
+`paths.tests`, compiles uncompiled objects, and records in the container state that the test objects are imported,
+so later imports keep them current and exports may delete test files whose objects were deleted.
+
+Returns `ImportedTests` and `Uncompiled` counts.
 
 `-LibrariesOnly` imports only the test libraries, regardless of `testToolkit.librariesOnly`.
 

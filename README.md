@@ -94,7 +94,7 @@ Useful switches:
 - `New-NAVGitContainer -Force` / `Update-NAVGitContainer -Force`: replace an existing container without asking.
 - `New-NAVGitContainer -ResetCredential`: ask for the container credential again.
 - `Import-NAVGitObjects -Force`: import every object file, also unchanged ones.
-- `Import-NAVGitObjects -IncludeTests`: also import the `Tests` folder when `includeTestToolkit` is off (e.g. after Import Test Toolkit).
+- `Import-NAVGitObjects -IncludeTests`: also import the `Tests` folder when `includeTestToolkit` is off. Import Test Toolkit imports it too; after either, later imports include it automatically.
 - `Import-NAVGitTestToolkit -LibrariesOnly`: only the test libraries.
 - `Invoke-NAVGitCompile -Filter 'Type=Codeunit;Id=50000..50099'`: compile with any C/SIDE filter.
 
@@ -135,7 +135,7 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 | `dns` | `""` | DNS server, or `hostDNS`. |
 | `updateHosts` | `true` | Add the container to the hosts file (needed by the client commands). |
 | `enableSymbolLoading` | `false` | Symbol loading (NAV 2018 / BC14 only). |
-| `includeTestToolkit` | `false` | Import the test toolkit while building the container. Objects in `Tests` are only imported when this is set (or with `Import-NAVGitObjects -IncludeTests`), since they need the toolkit to compile. |
+| `includeTestToolkit` | `false` | Import the test toolkit while building the container. Objects in `Tests` are only imported when this is set (or with `Import-NAVGitObjects -IncludeTests` or Import Test Toolkit), since they need the toolkit to compile. Until they are imported, Export never deletes files in `Tests`. |
 | `testToolkit.country` | `""` | Localized test toolkit. |
 | `testToolkit.librariesOnly` | `false` | Only the test libraries. |
 | `myScripts` | `[]` | Scripts for `New-BcContainer -myScripts` (URLs or paths). |

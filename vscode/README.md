@@ -10,7 +10,7 @@ Open a repository with a `navgit.json` and run the commands from the Command Pal
 | Build and Update Container | Builds the container and imports all objects from Git |
 | Build Container | Builds the container (backup restored via BcContainerHelper `-bakFile`) |
 | Remove Container | Removes the container (asks first) |
-| Import Test Toolkit | Imports the C/AL test toolkit and compiles |
+| Import Test Toolkit | Imports the C/AL test toolkit and the objects in the Tests folder, and compiles |
 | Import All GIT Objects to NAV | Imports changed objects from `Objects` (and `Tests` when `includeTestToolkit` is set), compiles and syncs |
 | Export NAV objects to GIT | Exports objects; test objects go to `Tests`, the rest to `Objects` |
 | Compile Uncompiled Objects | Compiles objects with `Compiled=No` in the container |

@@ -19,11 +19,15 @@ function Update-NAVGitContainerState {
         throw "Container '$($config.containerName)' does not exist. Build it with New-NAVGitContainer."
     }
 
+    # The configuration can be read again; what was imported into the container cannot.
     $previous = Get-NAVGitContainerState -ContainerName $config.containerName
-    $backupPath = $null
-    if ($previous) { $backupPath = $previous.backupFile }
+    $saveParams = @{ Config = $config; BackupPath = $null }
+    if ($previous) {
+        $saveParams.BackupPath = $previous.backupFile
+        if ($previous.ContainsKey('testsImported')) { $saveParams.TestsImported = [bool]$previous.testsImported }
+    }
 
-    $state = Save-NAVGitContainerState -Config $config -BackupPath $backupPath
+    $state = Save-NAVGitContainerState @saveParams
     Write-NAVGitLog "State updated for '$($state.containerName)' (NAV $($state.navVersion), instance $($state.serverInstance), database $($state.databaseName))" -Level Success
     if (-not $state.clientFolder) {
         Write-NAVGitLog "The Windows client was not found on the host; the container was probably created without -includeCSide." -Level Warning

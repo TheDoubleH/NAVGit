@@ -518,7 +518,9 @@ Default `false`.
 
 This also controls whether the [`paths.tests`](#pathstests) folder is imported: objects in it usually depend on the
 toolkit and would not compile without it. With `includeTestToolkit: false`, changed test objects are skipped with a
-warning, unless you run `Import-NAVGitObjects -IncludeTests` (for example after *Import Test Toolkit*).
+warning until you run *Import Test Toolkit* (which imports them as well) or `Import-NAVGitObjects -IncludeTests`.
+From then on the container remembers that it has the test objects: imports keep them current, and exports may delete
+test files whose objects were deleted. Until then, exports never delete files in the tests folder.
 
 #### `testToolkit.country`
 

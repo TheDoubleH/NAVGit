@@ -277,6 +277,30 @@ InModuleScope NAVGit {
             Join-Path $objects 'README.md' | Should -Exist
         }
 
+        It 'keeps missing files in Tests with -KeepMissingTests but still removes them from Objects' {
+            $null = New-TestObjectFile -Folder $objects -Id 99
+            $null = New-TestObjectFile -Folder $tests -Id 98 -VersionList 'Test'
+            $null = New-TestObjectFile -Folder $source -Id 18
+
+            $result = Sync-NAVGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing -KeepMissingTests
+
+            $result.Removed | Should -Be @('TAB99.TXT')
+            $result.Kept | Should -Be @('TAB98.TXT')
+            Join-Path $tests 'TAB98.TXT' | Should -Exist
+            Join-Path $objects 'TAB99.TXT' | Should -Not -Exist
+        }
+
+        It 'still moves an exported object out of Tests with -KeepMissingTests' {
+            $null = New-TestObjectFile -Folder $tests -Id 50100 -VersionList 'CUST1.00,Test'
+            $null = New-TestObjectFile -Folder $source -Id 50100 -VersionList 'CUST1.00'
+
+            $result = Sync-NAVGitObjectFolder -SourceFolder $source -ObjectsPath $objects -TestsPath $tests -TestObjects $defaultTestObjects -RemoveMissing -KeepMissingTests
+
+            $result.Moved | Should -Be @('TAB50100.TXT')
+            $result.Kept.Count | Should -Be 0
+            Join-Path $tests 'TAB50100.TXT' | Should -Not -Exist
+        }
+
         It 'keeps files that were not exported without -RemoveMissing' {
             $null = New-TestObjectFile -Folder $objects -Id 99
             $null = New-TestObjectFile -Folder $source -Id 18
@@ -307,6 +331,8 @@ InModuleScope NAVGit {
             Mock Invoke-NAVGitContainerCompile { @() }
             Mock Invoke-NAVGitForceSync { }
             Mock Set-NAVGitObjectsDeleted { }
+            Mock Get-NAVGitContainerState { $null }
+            Mock Set-NAVGitContainerStateValue { }
             Mock Write-Host { }
         }
 
@@ -341,6 +367,36 @@ InModuleScope NAVGit {
             $result = Import-NAVGitObjects -Path $repo -IncludeTests -WarningAction SilentlyContinue
 
             $result.Imported | Should -Be 2
+            $result.SkippedTests | Should -Be 0
+            $script:importedFile | Should -Match 'OBJECT Codeunit 50100'
+        }
+
+        It 'records that the test objects are imported when they are included (<Case>)' -ForEach @(
+            @{ Case = 'includeTestToolkit'; Toolkit = $true; Switch = $false }
+            @{ Case = '-IncludeTests'; Toolkit = $false; Switch = $true }
+        ) {
+            $config.includeTestToolkit = $Toolkit
+            $null = Import-NAVGitObjects -Path $repo -IncludeTests:$Switch -WarningAction SilentlyContinue
+            Should -Invoke Set-NAVGitContainerStateValue -Times 1 -Exactly -ParameterFilter { $ContainerName -eq 'cust' -and $Name -eq 'testsImported' -and $Value -eq $true }
+        }
+
+        It 'does not record anything when the test objects are skipped' {
+            $null = Import-NAVGitObjects -Path $repo -WarningAction SilentlyContinue
+            Should -Invoke Set-NAVGitContainerStateValue -Times 0 -Exactly
+        }
+
+        It 'does not record anything when the import fails' {
+            $config.includeTestToolkit = $true
+            Mock Import-ObjectsToNavContainer { throw 'finsql failed' }
+            { Import-NAVGitObjects -Path $repo -WarningAction SilentlyContinue } | Should -Throw '*finsql failed*'
+            Should -Invoke Set-NAVGitContainerStateValue -Times 0 -Exactly
+        }
+
+        It 'keeps importing test objects once they are in the container' {
+            Mock Get-NAVGitContainerState { @{ testsImported = $true } }
+
+            $result = Import-NAVGitObjects -Path $repo -WarningAction SilentlyContinue
+
             $result.SkippedTests | Should -Be 0
             $script:importedFile | Should -Match 'OBJECT Codeunit 50100'
         }
@@ -423,6 +479,7 @@ InModuleScope NAVGit {
                 $null = New-TestObjectFile -Folder $objectsFolder -Id 18 -VersionList 'NAVW111.00'
                 $null = New-TestObjectFile -Folder $objectsFolder -Id 50100 -VersionList 'CUST1.00,Test'
             }
+            Mock Get-NAVGitContainerState { @{ testsImported = $true } }
             Mock Write-Host { }
         }
 
@@ -437,6 +494,41 @@ InModuleScope NAVGit {
             $result.Removed | Should -Be @('TAB77.TXT')
             Should -Invoke Export-NavContainerObjects -Times 1 -Exactly -ParameterFilter { $filter -eq '' -and $exportTo -eq 'txt folder' }
             $staging | Should -Not -Exist
+        }
+
+        It 'keeps the Tests folder when the test objects were never imported' {
+            Mock Get-NAVGitContainerState { @{ testsImported = $false } }
+            $null = New-TestObjectFile -Folder $config.testsPath -Type Codeunit -Id 50200 -VersionList 'Test'
+
+            $result = Export-NAVGitObjects -Path $repo
+
+            Join-Path $config.testsPath 'COD50200.TXT' | Should -Exist
+            $result.Kept | Should -Be @('COD50200.TXT')
+            $result.Removed | Should -Be @('TAB77.TXT')
+            Join-Path $config.testsPath 'TAB50100.TXT' | Should -Exist
+        }
+
+        It 'removes missing test files once the test objects are imported' {
+            $null = New-TestObjectFile -Folder $config.testsPath -Type Codeunit -Id 50200 -VersionList 'Test'
+
+            $result = Export-NAVGitObjects -Path $repo
+
+            Join-Path $config.testsPath 'COD50200.TXT' | Should -Not -Exist
+            @($result.Removed | Sort-Object) | Should -Be @('COD50200.TXT', 'TAB77.TXT')
+            $result.Kept.Count | Should -Be 0
+        }
+
+        It 'goes by includeTestToolkit (<Toolkit>) when the state does not say' -ForEach @(
+            @{ Toolkit = $true; Removed = $true }
+            @{ Toolkit = $false; Removed = $false }
+        ) {
+            Mock Get-NAVGitContainerState { $null }
+            $config.includeTestToolkit = $Toolkit
+            $null = New-TestObjectFile -Folder $config.testsPath -Type Codeunit -Id 50200 -VersionList 'Test'
+
+            $null = Export-NAVGitObjects -Path $repo
+
+            (Test-Path -LiteralPath (Join-Path $config.testsPath 'COD50200.TXT')) | Should -Be (-not $Removed)
         }
 
         It 'keeps files that were not exported when a partial filter is used' {
