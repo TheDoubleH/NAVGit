@@ -38,6 +38,7 @@ function New-TestUserSettings {
         bcContainerHelperVersion = ''
         auth                     = ''
         isolation                = ''
+        shortcuts                = ''
         showBcContainerCommand   = $null
         deleteMissing            = ''
         containerName            = ''

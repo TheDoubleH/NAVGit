@@ -21,6 +21,7 @@ function Get-NAVGitKnownConfigKeys {
         'memoryLimit'          = $null
         'dns'                  = $null
         'updateHosts'          = $null
+        'shortcuts'            = $null
         'enableSymbolLoading'  = $null
         'includeTestToolkit'   = $null
         'testToolkit'          = @('country', 'librariesOnly')

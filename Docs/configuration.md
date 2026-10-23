@@ -30,6 +30,7 @@ everyone working on the repository builds the same container.
       - [`memoryLimit`](#memorylimit)
       - [`dns`](#dns)
       - [`updateHosts`](#updatehosts)
+      - [`shortcuts`](#shortcuts)
       - [`enableSymbolLoading`](#enablesymbolloading)
       - [`myScripts`](#myscripts)
       - [`additionalParameters`](#additionalparameters)
@@ -71,7 +72,7 @@ For the per-user file (`%APPDATA%\NAVGit\settings.json`) see [user-settings.md](
 3. The file is **deep-merged over the defaults**: nested objects are merged key by key, so
    `"import": { "deleteMissing": "warn" }` keeps the defaults for the other `import` settings. Arrays are
    *replaced*, not merged.
-4. The [user settings](user-settings.md) override `navgit.json`: `auth`, `isolation`, `showBcContainerCommand`,
+4. The [user settings](user-settings.md) override `navgit.json`: `auth`, `isolation`, `shortcuts`, `showBcContainerCommand`,
    `import.deleteMissing` (user `deleteMissing`), `containerName` and `artifact` (user `artifact.url`). A user
    setting that is set always wins; an empty one leaves the repository's value alone. The overrides are applied
    after `navgit.json` has been validated, so the file must be valid on its own.
@@ -126,6 +127,7 @@ Every setting, with its default value (except where noted):
   "memoryLimit": "",
   "dns": "",
   "updateHosts": true,
+  "shortcuts": "None",
   "enableSymbolLoading": false,
   "includeTestToolkit": false,
   "testToolkit": { "country": "", "librariesOnly": false },
@@ -168,6 +170,7 @@ Every setting, with its default value (except where noted):
 | `memoryLimit` | string | | `""` | `""` or number + `M`/`G`: `8G`, `4096M`, `7.5G` |
 | `dns` | string | | `""` | an IP address, `hostDNS`, or `""` |
 | `updateHosts` | boolean | | `true` | `true`, `false` |
+| `shortcuts` | string | | `None` | `None`, `Desktop`, `StartMenu`, `CommonStartMenu`, `CommonDesktop`, `DesktopFolder`, `CommonDesktopFolder` |
 | `enableSymbolLoading` | boolean | | `false` | `true` (NAV 2018 / BC14 only), `false` |
 | `includeTestToolkit` | boolean | | `false` | `true`, `false` |
 | `testToolkit.country` | string | | `""` | localization code or `""` |
@@ -462,6 +465,25 @@ the host's DNS servers. Default `""` (Docker default). Not validated beyond bein
 `true` (default) adds the container to the Windows hosts file so it can be reached by its name. The client
 commands (Start NAV Client, Start FinSql, the profile list) connect by container name, so keep this on unless you
 handle name resolution another way.
+
+#### `shortcuts`
+
+Where BcContainerHelper puts the container's shortcuts (Web Client, Windows Client, C/SIDE, PowerShell, ...), passed
+to `New-BcContainer -shortcuts`.
+
+| Value | Meaning |
+| --- | --- |
+| `None` | No shortcuts. |
+| `Desktop` | On your desktop. |
+| `StartMenu` | In your Start menu. |
+| `CommonStartMenu` | In the Start menu for all users. |
+| `CommonDesktop` | On the desktop for all users. |
+| `DesktopFolder` | In a folder named after the container on your desktop. |
+| `CommonDesktopFolder` | In a folder named after the container on the desktop for all users. |
+
+Default: `None`, since NAVGit has its own commands for the clients; BcContainerHelper's own default would be
+`Desktop`. A `shortcuts` in the [user settings](user-settings.md#shortcuts) **wins** over this one. Other values are
+rejected.
 
 #### `enableSymbolLoading`
 

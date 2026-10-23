@@ -47,7 +47,7 @@ VS Code extension (bundles the module): install **NAVGit** from the
 cd C:\Repos\NAVGit\vscode
 npm install
 npm run package
-code --install-extension navgit-1.3.1.vsix
+code --install-extension navgit-1.3.2.vsix
 ```
 
 ## Quick start
@@ -134,6 +134,7 @@ Plain JSON (no comments) in the repository root. VS Code validates it with the b
 | `memoryLimit` | `""` | E.g. `8G`. BcContainerHelper uses 8G for Hyper-V isolation when empty. |
 | `dns` | `""` | DNS server, or `hostDNS`. |
 | `updateHosts` | `true` | Add the container to the hosts file (needed by the client commands). |
+| `shortcuts` | `None` | Where BcContainerHelper creates the container's shortcuts: `None`, `Desktop`, `StartMenu`, `CommonStartMenu`, `CommonDesktop`, `DesktopFolder` or `CommonDesktopFolder`. |
 | `enableSymbolLoading` | `false` | Symbol loading (NAV 2018 / BC14 only). |
 | `includeTestToolkit` | `false` | Import the test toolkit while building the container. Objects in `Tests` are only imported when this is set (or with `Import-NAVGitObjects -IncludeTests` or Import Test Toolkit), since they need the toolkit to compile. Until they are imported, Export never deletes files in `Tests`. |
 | `testToolkit.country` | `""` | Localized test toolkit. |
@@ -177,7 +178,7 @@ repository's values alone.
   `database.searchNames`.
 - `licenseFolder`: used for relative `licenseFile` values.
 - `bcContainerHelperVersion`: pin a BcContainerHelper version.
-- `auth` / `isolation` / `showBcContainerCommand`: override the same settings in `navgit.json` (`auth` and
+- `auth` / `isolation` / `shortcuts` / `showBcContainerCommand`: override the same settings in `navgit.json` (`auth` and
   `isolation` used to be called `defaultAuth` / `defaultIsolation`; the old names still work, with a warning).
 - `deleteMissing`: `skip`, `warn` or `mark`; overrides `import.deleteMissing`.
 - `containerName`: overrides `containerName`, e.g. `{ "branch": { "prefix": "MIS", "length": 8 } }` for one container per ticket branch.

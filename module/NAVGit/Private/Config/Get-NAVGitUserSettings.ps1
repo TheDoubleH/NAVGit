@@ -28,6 +28,7 @@ function Get-NAVGitUserSettings {
         bcContainerHelperVersion = ''
         auth                     = ''
         isolation                = ''
+        shortcuts                = ''
         # $null = not set; navgit.json (or the default) is used.
         showBcContainerCommand   = $null
         deleteMissing            = ''
@@ -105,6 +106,10 @@ function Get-NAVGitUserSettings {
         }
         if ($settings.isolation -and $settings.isolation -notin @('hyperv', 'process')) {
             throw "NAVGit user settings '$Path': isolation must be 'hyperv', 'process' or empty (was '$($settings.isolation)')."
+        }
+        $shortcuts = Get-NAVGitShortcutsValues
+        if ($settings.shortcuts -and $settings.shortcuts -notin $shortcuts) {
+            throw "NAVGit user settings '$Path': shortcuts must be $(($shortcuts | ForEach-Object { "'$_'" }) -join ', ') or empty (was '$($settings.shortcuts)')."
         }
         if ($settings.deleteMissing -and $settings.deleteMissing -notin @('skip', 'warn', 'mark')) {
             throw "NAVGit user settings '$Path': deleteMissing must be 'skip', 'warn', 'mark' or empty (was '$($settings.deleteMissing)')."

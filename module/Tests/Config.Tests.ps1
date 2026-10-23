@@ -85,6 +85,15 @@ InModuleScope NAVGit {
             { Get-NAVGitUserSettings -Path $path } | Should -Throw '*isolation must be*'
         }
 
+        It 'reads shortcuts and rejects a value New-BcContainer does not accept' {
+            $path = Join-Path $TestDrive 'shortcuts-settings.json'
+            Set-Content -LiteralPath $path -Value '{ "shortcuts": "CommonStartMenu" }'
+            (Get-NAVGitUserSettings -Path $path).shortcuts | Should -Be 'CommonStartMenu'
+
+            Set-Content -LiteralPath $path -Value '{ "shortcuts": "Taskbar" }'
+            { Get-NAVGitUserSettings -Path $path } | Should -Throw '*shortcuts must be*'
+        }
+
         It 'reads defaultAuth and defaultIsolation as auth and isolation, with a warning' {
             $path = Join-Path $TestDrive 'old-settings.json'
             Set-Content -LiteralPath $path -Value '{ "defaultAuth": "NavUserPassword", "defaultIsolation": "hyperv" }'
@@ -185,6 +194,27 @@ InModuleScope NAVGit {
             It 'rejects an invalid isolation' {
                 $repo = New-TestRepository -Config @{ isolation = 'vm' }
                 { Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings) } | Should -Throw "*'isolation' must be one of*"
+            }
+        }
+
+        Context 'shortcuts' {
+            It 'defaults to None' {
+                (Get-NAVGitConfig -Path (New-TestRepository) -UserSettings (New-TestUserSettings)).shortcuts | Should -Be 'None'
+            }
+
+            It 'uses navgit.json when the user setting is empty' {
+                $repo = New-TestRepository -Config @{ shortcuts = 'Desktop' }
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings)).shortcuts | Should -Be 'Desktop'
+            }
+
+            It 'lets the user setting win over navgit.json' {
+                $repo = New-TestRepository -Config @{ shortcuts = 'Desktop' }
+                (Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings @{ shortcuts = 'None' })).shortcuts | Should -Be 'None'
+            }
+
+            It 'rejects an invalid shortcuts' {
+                $repo = New-TestRepository -Config @{ shortcuts = 'Taskbar' }
+                { Get-NAVGitConfig -Path $repo -UserSettings (New-TestUserSettings) } | Should -Throw "*'shortcuts' must be one of*"
             }
         }
 

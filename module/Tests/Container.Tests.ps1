@@ -63,6 +63,10 @@ InModuleScope NAVGit {
             $params.Credential | Should -Be $credential
         }
 
+        It 'passes shortcuts from the configuration' {
+            (Invoke-Build @{ shortcuts = 'StartMenu' }).shortcuts | Should -Be 'StartMenu'
+        }
+
         It 'leaves out isolation when it is empty' {
             (Invoke-Build @{ isolation = '' }).ContainsKey('isolation') | Should -BeFalse
         }
