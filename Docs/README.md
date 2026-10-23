@@ -28,6 +28,7 @@ How they combine: **a user setting that is set always wins over `navgit.json`.**
 | --- | --- | --- | --- |
 | Authentication | `auth` | `auth` | **settings.json** when set |
 | Isolation | `isolation` | `isolation` | **settings.json** when set |
+| Shortcuts | `shortcuts` | `shortcuts` | **settings.json** when set |
 | Show the container command | `showBcContainerCommand` | `showBcContainerCommand` | **settings.json** when set |
 | Objects missing from Git | `import.deleteMissing` | `deleteMissing` | **settings.json** when set |
 | Container name | `containerName` | `containerName` | **settings.json** when set |

@@ -16,6 +16,7 @@ function Get-NAVGitDefaultConfig {
         memoryLimit          = ''
         dns                  = ''
         updateHosts          = $true
+        shortcuts            = 'None'
         enableSymbolLoading  = $false
         includeTestToolkit   = $false
         testToolkit          = @{ country = ''; librariesOnly = $false }
@@ -42,6 +43,18 @@ function Get-NAVGitDefaultAuth {
         return 'NavUserPassword'
     }
     return 'Windows'
+}
+
+function Get-NAVGitShortcutsValues {
+    <#
+    .SYNOPSIS
+        The values New-BcContainer -shortcuts accepts (its ValidateSet), for navgit.json and the user settings.
+    #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param()
+
+    return @('None', 'Desktop', 'StartMenu', 'CommonStartMenu', 'CommonDesktop', 'DesktopFolder', 'CommonDesktopFolder')
 }
 
 function Get-NAVGitEffectiveAuth {

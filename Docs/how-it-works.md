@@ -39,7 +39,7 @@ builds the image without the Cronus database.
 | `-includeTestToolkit` | when `includeTestToolkit` |
 | `-includeTestLibrariesOnly` | when `includeTestToolkit` and `testToolkit.librariesOnly` |
 | `-updateHosts` | `updateHosts` |
-| `-shortcuts` | always `None` |
+| `-shortcuts` | `shortcuts` (default `None`) |
 | `-restart` | always `unless-stopped` |
 | `-myScripts` | `myScripts` (when not empty) |
 | `-additionalParameters` | `additionalParameters`, plus the add-ins volume |

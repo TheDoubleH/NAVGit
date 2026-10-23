@@ -26,6 +26,7 @@ The file is optional. When it does not exist, every setting has its default.
   "licenseFolder": "C:\\NAVGIT\\License",
   "auth": "NavUserPassword",
   "isolation": "hyperv",
+  "shortcuts": "",
   "bcContainerHelperVersion": "",
   "showBcContainerCommand": false,
   "deleteMissing": "",
@@ -51,6 +52,7 @@ The file is optional. When it does not exist, every setting has its default.
 | `bcContainerHelperVersion` | string | `""` | `""` or an installed version, e.g. `6.0.30` | Pins the BcContainerHelper version |
 | `auth` | string | `""` | `""`, `Windows`, `NavUserPassword` | **Overrides** `auth` |
 | `isolation` | string | `""` | `""`, `hyperv`, `process` | **Overrides** `isolation` |
+| `shortcuts` | string | `""` | `""`, `None`, `Desktop`, `StartMenu`, `CommonStartMenu`, `CommonDesktop`, `DesktopFolder`, `CommonDesktopFolder` | **Overrides** `shortcuts` |
 | `showBcContainerCommand` | boolean | not set | `true`, `false` | **Overrides** `showBcContainerCommand` |
 | `deleteMissing` | string | `""` | `""`, `skip`, `warn`, `mark` | **Overrides** `import.deleteMissing` |
 | `containerName` | string or object | `""` | `""` or any [`containerName`](configuration.md#containername) form | **Overrides** `containerName` |
@@ -105,6 +107,12 @@ empty user setting cannot force "let BcContainerHelper decide" over a repository
 
 This setting used to be called `defaultIsolation`. The old name is still read, with a warning asking you to rename
 it.
+
+### `shortcuts`
+
+Personal override for [`shortcuts`](configuration.md#shortcuts), e.g. `"Desktop"` if you want BcContainerHelper's
+shortcuts for every container you build. Empty (default) uses the repository's value; `"None"` turns them off even
+when the repository asks for them.
 
 ### `showBcContainerCommand`
 
@@ -177,7 +185,7 @@ A string (`"50100"`, as in AdvaniaGIT) or a JSON number (`50100`) is accepted.
 - Values are read as strings except `showBcContainerCommand`, which must be `true` or `false`, `containerName`,
   which may also be an object (checked when a repository's configuration is loaded), and `artifact`, which must be
   `{ "url": "https://..." }`.
-- `auth`, `isolation` and `deleteMissing` are checked against their allowed values, and `uidOffset` must be a whole
+- `auth`, `isolation`, `shortcuts` and `deleteMissing` are checked against their allowed values, and `uidOffset` must be a whole
   number from 0 to 2147483647; an invalid value is an error, not a warning.
 - The old names `defaultAuth` and `defaultIsolation` are read as `auth` and `isolation`, with a warning. When both
   the old and the new name are present, the new one is used.

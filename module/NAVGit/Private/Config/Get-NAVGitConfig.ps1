@@ -47,6 +47,7 @@ function Get-NAVGitConfig {
     $overrides = [ordered]@{
         auth                   = $UserSettings.auth
         isolation              = $UserSettings.isolation
+        shortcuts              = $UserSettings.shortcuts
         showBcContainerCommand = $UserSettings.showBcContainerCommand
     }
     foreach ($key in $overrides.Keys) {

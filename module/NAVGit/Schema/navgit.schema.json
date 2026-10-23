@@ -135,6 +135,12 @@
     },
     "dns": { "type": "string", "default": "", "description": "DNS server for the container, or 'hostDNS'. Empty uses the Docker default." },
     "updateHosts": { "type": "boolean", "default": true, "description": "Add the container to the hosts file so it can be reached by name." },
+    "shortcuts": {
+      "type": "string",
+      "enum": ["None", "Desktop", "StartMenu", "CommonStartMenu", "CommonDesktop", "DesktopFolder", "CommonDesktopFolder"],
+      "default": "None",
+      "description": "Where BcContainerHelper creates the container's shortcuts (New-BcContainer -shortcuts). Default: None. shortcuts in the user settings wins."
+    },
     "enableSymbolLoading": { "type": "boolean", "default": false, "description": "Enable symbol loading (NAV 2018 / BC14 only, versions 11-14)." },
     "includeTestToolkit": { "type": "boolean", "default": false, "description": "Import the test toolkit while creating the container." },
     "testToolkit": {

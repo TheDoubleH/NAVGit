@@ -59,7 +59,7 @@ function ConvertTo-NAVGitContainerParameters {
         includeCSide             = $true
         doNotExportObjectsToText = $true
         updateHosts              = [bool]$Config.updateHosts
-        shortcuts                = 'None'
+        shortcuts                = $Config.shortcuts
         restart                  = 'unless-stopped'
     }
 

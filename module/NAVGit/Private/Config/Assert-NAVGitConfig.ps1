@@ -151,6 +151,7 @@ function Assert-NAVGitConfig {
     Test-String 'memoryLimit' $Config.memoryLimit -Pattern '^\d+(\.\d+)?[MmGg]$' -PatternHint "must look like '8G' or '4096M'."
     Test-String 'dns' $Config.dns
     Test-Bool 'updateHosts' $Config.updateHosts
+    Test-Enum 'shortcuts' $Config.shortcuts (Get-NAVGitShortcutsValues)
     Test-Bool 'enableSymbolLoading' $Config.enableSymbolLoading
     Test-Bool 'includeTestToolkit' $Config.includeTestToolkit
     if (Test-Object 'testToolkit' $Config.testToolkit) {
