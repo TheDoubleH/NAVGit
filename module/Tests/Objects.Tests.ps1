@@ -506,8 +506,7 @@ InModuleScope NAVGit {
         It 'exports inside the container, with a warning, when finsql.exe is not on the host (<Name>)' -ForEach @(
             @{ Name = 'no state'; State = $null }
             @{ Name = 'no client folder'; State = @{ testsImported = $true } }
-            @{ Name = 'finsql.exe missing'; State = @{ testsImported = $true; clientFolder = 'TestDrive:
-ope' } }
+            @{ Name = 'finsql.exe missing'; State = @{ testsImported = $true; clientFolder = 'TestDrive:\nope' } }
         ) {
             $stateValue = $State
             Mock Get-NAVGitContainerState { $stateValue }
