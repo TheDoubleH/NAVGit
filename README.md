@@ -47,7 +47,7 @@ VS Code extension (bundles the module): install **NAVGit** from the
 cd C:\Repos\NAVGit\vscode
 npm install
 npm run package
-code --install-extension navgit-1.3.2.vsix
+code --install-extension navgit-1.3.3.vsix
 ```
 
 ## Quick start
@@ -268,17 +268,14 @@ Releasing (GitHub Actions, [.github/workflows/release.yml](.github/workflows/rel
 
 1. Set the same version in `ModuleVersion` (`module\NAVGit\NAVGit.psd1`) and `version` (`vscode\package.json`).
 2. Commit, then tag and push: `git tag v1.0.1; git push origin v1.0.1`.
-3. The workflow checks the versions, runs all tests, publishes the module to the PowerShell Gallery and the
-   extension to the VS Code Marketplace, and creates a GitHub release.
+3. The workflow checks the versions, runs all tests, publishes the module to the PowerShell Gallery, packages the
+   extension, and creates a GitHub release with the `.vsix` attached.
+4. Download the `.vsix` from the GitHub release and upload it to the `TheDoubleH` publisher in the
+   [Marketplace management portal](https://marketplace.visualstudio.com/manage).
 
 One-time setup:
 
 - **PowerShell Gallery**: create an API key that can push `NAVGit` and store it as the repository secret
   `PSGALLERY_API_KEY`. Gallery keys expire after at most a year; renew it before then.
-- **VS Code Marketplace**: no secret. The workflow uses `vsce publish --oidc` (trusted publishing), which swaps the
-  workflow's GitHub OIDC token for a short-lived Marketplace token. Add a trusted publishing policy for this
-  repository and `release.yml` to the `TheDoubleH` publisher in the
-  [Marketplace management portal](https://marketplace.visualstudio.com/manage). This replaces Azure DevOps personal
-  access tokens, which stop working for publishing when global PATs are retired on 1 December 2026.
 
 Published versions can't be replaced, only unlisted, so a failed publish needs a new version number.

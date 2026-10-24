@@ -9,6 +9,8 @@ function Export-NAVGitObjects {
         export.filter), object files of objects that no longer exist in the database are deleted. Files in the Tests
         folder are only deleted once the test objects have been imported into the container (Import-NAVGitObjects
         with tests, or Import-NAVGitTestToolkit); before that they are simply not in the database.
+        The export runs finsql.exe on the host (copied there by includeCSide), so Automation variables get their names
+        from the type libraries on the host, not from the container, which has few of them.
     .PARAMETER Path
         Repository folder (or any folder/file inside it). Default: current location.
     #>
@@ -32,11 +34,24 @@ function Export-NAVGitObjects {
     # Test objects that were never imported are missing from the database, not deleted.
     $keepMissingTests = $fullExport -and -not (Test-NAVGitTestsImported -ContainerName $context.ContainerName -Config $config)
 
+    # finsql on the host resolves Automation names from the host's type libraries; the container has few of them.
+    $state = Get-NAVGitContainerState -ContainerName $context.ContainerName
+    $onHost = $state -and $state.clientFolder -and (Test-Path -LiteralPath (Join-Path $state.clientFolder 'finsql.exe') -PathType Leaf)
+    if (-not $onHost) {
+        Write-NAVGitLog "finsql.exe for '$($context.ContainerName)' was not found on this machine, so the objects are exported inside the container. Automations whose type library is not installed there are exported as 'Unknown Automation Server.Unknown Class'. Run Update-NAVGitContainerState, or rebuild the container, to export on the host." -Level Warning
+    }
+
     $staging = Get-NAVGitStagingFolder -ContainerName $context.ContainerName
     try {
-        Write-NAVGitLog "Exporting $description from '$($context.ContainerName)'" -Level Step
-        Export-NavContainerObjects -containerName $context.ContainerName -objectsFolder $staging -filter $config.export.filter `
-            -exportTo $config.export.format -sqlCredential $context.SqlCredential
+        if ($onHost) {
+            Write-NAVGitLog "Exporting $description from '$($context.ContainerName)' with finsql.exe on the host" -Level Step
+            Export-NAVGitObjectsWithFinSql -Context $context -State $state -ObjectsFolder $staging -Filter $config.export.filter
+        }
+        else {
+            Write-NAVGitLog "Exporting $description from '$($context.ContainerName)'" -Level Step
+            Export-NavContainerObjects -containerName $context.ContainerName -objectsFolder $staging -filter $config.export.filter `
+                -exportTo $config.export.format -sqlCredential $context.SqlCredential
+        }
 
         Write-NAVGitLog 'Updating the Objects and Tests folders' -Level Step
         $result = Sync-NAVGitObjectFolder -SourceFolder $staging -ObjectsPath $config.objectsPath -TestsPath $config.testsPath `

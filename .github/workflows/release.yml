@@ -5,9 +5,9 @@
 # Authentication:
 #   PowerShell Gallery  repository secret PSGALLERY_API_KEY, from https://www.powershellgallery.com/account/apikeys
 #                       (scope: push new packages and versions, glob pattern NAVGit).
-#   VS Code Marketplace no secret: vsce --oidc (trusted publishing) exchanges this workflow's GitHub OIDC token for a
-#                       short-lived Marketplace token. Configure a trusted publishing policy for this repository and
-#                       release.yml on the TheDoubleH publisher at https://marketplace.visualstudio.com/manage.
+#
+# The VS Code extension is not published here: the .vsix is attached to the GitHub release and uploaded to the
+# Marketplace by hand at https://marketplace.visualstudio.com/manage.
 name: Release
 
 on:
@@ -56,13 +56,10 @@ jobs:
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
         run: Publish-PSResource -Path module/NAVGit/NAVGit.psd1 -Repository PSGallery -ApiKey $env:PSGALLERY_API_KEY
 
-  publish-extension:
-    name: Publish to the VS Code Marketplace
+  package-extension:
+    name: Package the VS Code extension
     needs: test
     runs-on: windows-latest
-    permissions:
-      contents: read
-      id-token: write   # lets vsce request the OIDC token for trusted publishing
     defaults:
       run:
         working-directory: vscode
@@ -76,20 +73,30 @@ jobs:
       - run: npm ci
 
       # vscode:prepublish type-checks, copies the module into the extension and bundles it.
-      # --oidc never falls back to a PAT: without a trusted publishing policy this step fails.
-      - name: Publish extension
-        run: npx vsce publish --oidc
+      - name: Package extension
+        run: npx vsce package
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: vscode/*.vsix
+          if-no-files-found: error
 
   github-release:
     name: Create GitHub release
-    needs: [publish-module, publish-extension]
+    needs: [publish-module, package-extension]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v6
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: vsix
+          path: vsix
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" --title "NAVGit ${{ github.ref_name }}" --generate-notes
+        run: gh release create "${{ github.ref_name }}" vsix/*.vsix --title "NAVGit ${{ github.ref_name }}" --generate-notes
