@@ -33,7 +33,7 @@ builds the image without the Cronus database.
 | `-isolation` | `isolation` (omitted when empty) |
 | `-memoryLimit` | `memoryLimit` (omitted when empty) |
 | `-dns` | `dns` (omitted when empty) |
-| `-includeCSide` | always (copies the Windows client and finsql.exe to the host) |
+| `-includeCSide` | always (copies the Windows client and finsql.exe to the host; the export runs that finsql) |
 | `-doNotExportObjectsToText` | always (NAVGit exports objects itself) |
 | `-enableSymbolLoading` | when `enableSymbolLoading` |
 | `-includeTestToolkit` | when `includeTestToolkit` |
@@ -62,8 +62,19 @@ listed (first 25), and the tenant is force-synchronized.
 
 ## Exporting objects
 
-Objects are exported to a temporary folder shared with the container, split into one file per object
-(`TAB18.TXT`), and mirrored into the repository:
+Objects are exported by the `finsql.exe` on the host (the client folder copied by `-includeCSide`), connected to the
+container database like *Start FinSql*. The export file goes to a temporary folder shared with the container and is
+split there into one file per object (`TAB18.TXT`) by `Split-NAVApplicationObjectFile`, the same way
+`Export-NavContainerObjects` does it.
+
+The export runs on the host because finsql writes the name of an Automation variable from the type library
+registered on the machine it runs on. The Windows Server Core container has few of them (no TAPI, no Office), so an
+export inside the container writes `Unknown Automation Server.Unknown Class` for those. The host has the same type
+libraries as the developer's C/SIDE, as with AdvaniaGIT. From NAV version 14 the system objects are left out unless
+`export.filter` selects IDs. When the container has no saved state or `finsql.exe` is missing on the host, the export
+falls back to `Export-NavContainerObjects` inside the container, with a warning.
+
+The split files are then mirrored into the repository:
 
 - Each file goes to `paths.tests` if its Version List matches `testObjects.versionListPattern` or it is a test
   codeunit (`includeTestCodeunits`), else to `paths.objects`.

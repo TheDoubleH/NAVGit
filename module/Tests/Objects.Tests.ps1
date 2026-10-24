@@ -475,11 +475,17 @@ InModuleScope NAVGit {
                 [pscustomobject]@{ Config = $config; ContainerName = 'cust'; Credential = New-TestCredential; SqlCredential = $null }
             }
             Mock Get-NAVGitStagingFolder { $staging }
+            $clientFolder = New-TestFolder 'client'
+            Set-Content -LiteralPath (Join-Path $clientFolder 'finsql.exe') -Value ''
+            Mock Export-NAVGitObjectsWithFinSql {
+                $null = New-TestObjectFile -Folder $ObjectsFolder -Id 18 -VersionList 'NAVW111.00'
+                $null = New-TestObjectFile -Folder $ObjectsFolder -Id 50100 -VersionList 'CUST1.00,Test'
+            }
             Mock Export-NavContainerObjects {
                 $null = New-TestObjectFile -Folder $objectsFolder -Id 18 -VersionList 'NAVW111.00'
                 $null = New-TestObjectFile -Folder $objectsFolder -Id 50100 -VersionList 'CUST1.00,Test'
             }
-            Mock Get-NAVGitContainerState { @{ testsImported = $true } }
+            Mock Get-NAVGitContainerState { @{ testsImported = $true; clientFolder = $clientFolder } }
             Mock Write-Host { }
         }
 
@@ -492,12 +498,31 @@ InModuleScope NAVGit {
             Join-Path $config.objectsPath 'TAB77.TXT' | Should -Not -Exist
             $result.Moved | Should -Be @('TAB50100.TXT')
             $result.Removed | Should -Be @('TAB77.TXT')
-            Should -Invoke Export-NavContainerObjects -Times 1 -Exactly -ParameterFilter { $filter -eq '' -and $exportTo -eq 'txt folder' }
+            Should -Invoke Export-NAVGitObjectsWithFinSql -Times 1 -Exactly -ParameterFilter { $Filter -eq '' -and $State.clientFolder -eq $clientFolder }
+            Should -Invoke Export-NavContainerObjects -Times 0
             $staging | Should -Not -Exist
         }
 
+        It 'exports inside the container, with a warning, when finsql.exe is not on the host (<Name>)' -ForEach @(
+            @{ Name = 'no state'; State = $null }
+            @{ Name = 'no client folder'; State = @{ testsImported = $true } }
+            @{ Name = 'finsql.exe missing'; State = @{ testsImported = $true; clientFolder = 'TestDrive:
+ope' } }
+        ) {
+            $stateValue = $State
+            Mock Get-NAVGitContainerState { $stateValue }
+            Mock Write-Warning { }
+
+            $result = Export-NAVGitObjects -Path $repo
+
+            Should -Invoke Export-NavContainerObjects -Times 1 -Exactly -ParameterFilter { $filter -eq '' -and $exportTo -eq 'txt folder' }
+            Should -Invoke Export-NAVGitObjectsWithFinSql -Times 0
+            Should -Invoke Write-Warning -ParameterFilter { $Message -match 'Unknown Automation Server' }
+            Join-Path $config.objectsPath 'TAB18.TXT' | Should -Exist
+        }
+
         It 'keeps the Tests folder when the test objects were never imported' {
-            Mock Get-NAVGitContainerState { @{ testsImported = $false } }
+            Mock Get-NAVGitContainerState { @{ testsImported = $false; clientFolder = $clientFolder } }
             $null = New-TestObjectFile -Folder $config.testsPath -Type Codeunit -Id 50200 -VersionList 'Test'
 
             $result = Export-NAVGitObjects -Path $repo
@@ -523,6 +548,7 @@ InModuleScope NAVGit {
             @{ Toolkit = $false; Removed = $false }
         ) {
             Mock Get-NAVGitContainerState { $null }
+            Mock Write-Warning { }
             $config.includeTestToolkit = $Toolkit
             $null = New-TestObjectFile -Folder $config.testsPath -Type Codeunit -Id 50200 -VersionList 'Test'
 
@@ -537,6 +563,128 @@ InModuleScope NAVGit {
 
             $result.Removed.Count | Should -Be 0
             Join-Path $config.objectsPath 'TAB77.TXT' | Should -Exist
+        }
+    }
+
+    Describe 'Get-NAVGitExportFilter' {
+        It 'returns <Expected> for filter "<Filter>" on <Version>' -ForEach @(
+            @{ Filter = ''; Version = '11.0.43274.0'; Expected = '' }
+            @{ Filter = 'Type=Table'; Version = '9.0.50357.0'; Expected = 'Type=Table' }
+            @{ Filter = ''; Version = '14.0.29530.0'; Expected = 'Id=1..1999999999' }
+            @{ Filter = 'Type=Table'; Version = '14.0.29530.0'; Expected = 'Type=Table;Id=1..1999999999' }
+            @{ Filter = 'id=18'; Version = '14.0.29530.0'; Expected = 'id=18' }
+            @{ Filter = 'Type=Table;ID=18'; Version = '14.0.29530.0'; Expected = 'Type=Table;ID=18' }
+            @{ Filter = 'Type=Table'; Version = ''; Expected = 'Type=Table' }
+        ) {
+            Get-NAVGitExportFilter -Filter $Filter -NavVersion $Version | Should -BeExactly $Expected
+        }
+    }
+
+    Describe 'Get-NAVGitFinSqlCommandArguments' {
+        BeforeAll {
+            $state = @{ hostDatabaseServer = 'cust'; databaseName = 'my database'; auth = 'NavUserPassword' }
+            $sa = New-Object System.Management.Automation.PSCredential('sa', (ConvertTo-SecureString 'P@ss,word' -AsPlainText -Force))
+        }
+
+        It 'connects as sa with the container password and adds the parameters' {
+            $arguments = Get-NAVGitFinSqlCommandArguments -State $state -Command ExportObjects -WorkFolder 'C:\w' -SqlCredential $sa `
+                -Parameters ([ordered]@{ file = 'C:\w\objects.txt'; filter = 'Type=Codeunit;Id=5053'; exporttxtskipunlicensed = '1' })
+
+            $arguments | Should -BeExactly ('command=ExportObjects,servername="cust",database="my database",ntauthentication=0,username="sa",password="P@ss,word",' +
+                'file="C:\w\objects.txt",filter="Type=Codeunit;Id=5053",exporttxtskipunlicensed=1,logfile="C:\w\finsql.log",id="C:\w\navgit.zup"')
+        }
+
+        It 'uses integrated security for Windows containers and leaves out an empty filter' {
+            $windows = @{ hostDatabaseServer = 'cust'; databaseName = 'db'; auth = 'Windows' }
+            $arguments = Get-NAVGitFinSqlCommandArguments -State $windows -Command ExportObjects -WorkFolder 'C:\w' -Parameters ([ordered]@{ filter = '' })
+
+            $arguments | Should -BeExactly 'command=ExportObjects,servername="cust",database="db",ntauthentication=1,logfile="C:\w\finsql.log",id="C:\w\navgit.zup"'
+        }
+
+        It 'refuses a password with a double quote' {
+            $quoted = New-Object System.Management.Automation.PSCredential('sa', (ConvertTo-SecureString 'a"b' -AsPlainText -Force))
+            { Get-NAVGitFinSqlCommandArguments -State $state -Command ExportObjects -WorkFolder 'C:\w' -SqlCredential $quoted } |
+                Should -Throw '*double quote*'
+        }
+    }
+
+    Describe 'Invoke-NAVGitFinSqlCommand' {
+        BeforeEach {
+            $work = New-TestFolder 'finsql'
+            $state = @{ hostDatabaseServer = 'cust'; databaseName = 'db'; auth = 'Windows'; clientFolder = 'C:\client' }
+            Mock Write-NAVGitLog { }
+        }
+
+        It 'runs finsql.exe from the client folder and succeeds when the command completed' {
+            Mock Start-Process {
+                Set-Content -LiteralPath (Join-Path $work 'navcommandresult.txt') -Value 'The command completed successfully.'
+                [pscustomobject]@{ ExitCode = 0 }
+            }
+
+            { Invoke-NAVGitFinSqlCommand -State $state -Command ExportObjects -WorkFolder $work } | Should -Not -Throw
+            Should -Invoke Start-Process -Times 1 -Exactly -ParameterFilter {
+                $FilePath -eq 'C:\client\finsql.exe' -and $ArgumentList -like 'command=ExportObjects,*' -and $Wait
+            }
+        }
+
+        It 'throws with the log when finsql reported errors' {
+            Mock Start-Process {
+                Set-Content -LiteralPath (Join-Path $work 'navcommandresult.txt') -Value 'The command completed with errors.'
+                Set-Content -LiteralPath (Join-Path $work 'finsql.log') -Value '[18023703] Cannot open database'
+                [pscustomobject]@{ ExitCode = 0 }
+            }
+
+            { Invoke-NAVGitFinSqlCommand -State $state -Command ExportObjects -WorkFolder $work } | Should -Throw '*Cannot open database*'
+        }
+
+        It 'throws when finsql did not finish' {
+            Mock Start-Process { [pscustomobject]@{ ExitCode = 1 } }
+
+            { Invoke-NAVGitFinSqlCommand -State $state -Command ExportObjects -WorkFolder $work } | Should -Throw '*did not finish*'
+        }
+
+        It 'does not log the password' {
+            $sa = New-Object System.Management.Automation.PSCredential('sa', (ConvertTo-SecureString 'secret' -AsPlainText -Force))
+            $state.auth = 'NavUserPassword'
+            Mock Start-Process {
+                Set-Content -LiteralPath (Join-Path $work 'navcommandresult.txt') -Value 'ok'
+                [pscustomobject]@{ ExitCode = 0 }
+            }
+
+            Invoke-NAVGitFinSqlCommand -State $state -Command ExportObjects -WorkFolder $work -SqlCredential $sa
+
+            Should -Invoke Write-NAVGitLog -ParameterFilter { $Message -match 'password="\*\*\*"' -and $Message -notmatch 'secret' }
+        }
+    }
+
+    Describe 'Export-NAVGitObjectsWithFinSql' {
+        BeforeEach {
+            $staging = New-TestFolder 'staging'
+            $context = [pscustomobject]@{ ContainerName = 'cust'; SqlCredential = $null }
+            $state = @{ navVersion = '9.0.50357.0'; clientFolder = 'C:\client' }
+            Mock Get-BcContainerPath { 'C:\run\my\navgit\x' }
+            Mock Invoke-ScriptInBcContainer { }
+        }
+
+        It 'exports with finsql, splits inside the container and removes the finsql files' {
+            Mock Invoke-NAVGitFinSqlCommand { Set-Content -LiteralPath $Parameters.file -Value 'OBJECT Table 18 Customer' }
+
+            Export-NAVGitObjectsWithFinSql -Context $context -State $state -ObjectsFolder $staging -Filter 'Type=Table'
+
+            Should -Invoke Invoke-NAVGitFinSqlCommand -Times 1 -Exactly -ParameterFilter {
+                $Command -eq 'ExportObjects' -and $Parameters.filter -eq 'Type=Table' -and $Parameters.exporttxtskipunlicensed -eq '1' -and
+                $Parameters.file -eq (Join-Path $staging 'finsql\objects.txt') -and $WorkFolder -eq (Join-Path $staging 'finsql')
+            }
+            Should -Invoke Invoke-ScriptInBcContainer -Times 1 -Exactly -ParameterFilter { $containerName -eq 'cust' -and $argumentList[0] -eq 'C:\run\my\navgit\x' }
+            Join-Path $staging 'finsql' | Should -Not -Exist
+        }
+
+        It 'does not split when nothing was exported' {
+            Mock Invoke-NAVGitFinSqlCommand { }
+
+            Export-NAVGitObjectsWithFinSql -Context $context -State $state -ObjectsFolder $staging
+
+            Should -Invoke Invoke-ScriptInBcContainer -Times 0
         }
     }
 

@@ -48,6 +48,8 @@ The command also warns when:
   rather than a silent fallback to Cronus.
 - **Raw docker arguments are checked.** Entries in `additionalParameters` that duplicate a native setting are
   rejected ([list](configuration.md#additionalparameters)).
+- **Exports run on the host, as in AdvaniaGIT.** finsql runs from the client folder copied out of the container, so
+  Automation names in the exported files match what AdvaniaGIT committed.
 - **Tests are exported to `Tests`.** Objects with `Test` in the Version List and test codeunits go to the tests folder.
 - **The `Tests` folder is imported** when `includeTestToolkit` is set, so the first import adds your test objects.
   AdvaniaGIT never imported it. Without the toolkit, changed test objects are skipped with a warning.

@@ -24,6 +24,11 @@ Add `-Verbose` to any command for detail messages (resolved artifact, overrides,
 | `The Windows client for '…' was not found on this machine` | The container was built without `-includeCSide`; rebuild it with NAVGit. |
 | `Container '…' does not answer on port …` (warning) | The container is stopped (`docker start <name>`) or not in the hosts file (`updateHosts`). |
 | `… changed test object(s) in Tests are not imported because includeTestToolkit is off` | Run *Import Test Toolkit*, which imports the test objects too, or set `includeTestToolkit: true`. |
+| `finsql.exe for '…' was not found on this machine, so the objects are exported inside the container` (warning) | Run `Update-NAVGitContainerState` (elevated), or rebuild the container with NAVGit, so the export runs on the host. |
+| Automations exported as `Unknown Automation Server.Unknown Class` | The type library is not registered where finsql ran: in the container (see the warning above) or, for an export on the host, on this machine. Install the component (e.g. Office) on the host. |
+| Exports or imports are slow | Antivirus scans every object file and finsql's own reads. Add the [Defender exclusions](#microsoft-defender-exclusions). |
+| `finsql.exe ExportObjects failed: …` / `did not finish` | The log text says why (login, database). Check that the container is running and reachable by name (`updateHosts`). |
+| `The container password contains a double quote` | finsql cannot take it on its command line; set another password with `New-NAVGitContainer -ResetCredential`. |
 | `… object(s) had a Date/Time that could not be read and are imported anyway` | If it happens for all objects, set `import.dateFormat`. |
 | Every object is re-imported on each run | Usually a date format mismatch: set `import.dateFormat`. |
 | `… exists twice: '…' and '…'` | The same object is in both `Objects` and `Tests` (or twice in one). Delete one copy. |
@@ -31,3 +36,25 @@ Add `-Verbose` to any command for detail messages (resolved artifact, overrides,
 | `No stored credential for '…'` | Run a container command in a terminal once to enter the credential. |
 | VS Code: `The NAVGit module was not found at …` | Fix or clear `navgit.modulePath`. |
 | VS Code: `the elevated PowerShell window for '…' was not started` | The UAC prompt was declined. |
+
+## Microsoft Defender exclusions
+
+An export writes one file per object to a staging folder and then to the repository, and finsql.exe on the host reads
+the type libraries of every Automation. Real-time scanning of all of that makes exports and imports noticeably slower.
+Run this in an elevated PowerShell:
+
+```powershell
+# Staging folders and the client folders copied by includeCSide (<hostHelperFolder>\Extensions\<container>\...).
+Add-MpPreference -ExclusionPath 'C:\ProgramData\BcContainerHelper'
+# Container storage.
+Add-MpPreference -ExclusionPath 'C:\ProgramData\Docker'
+# finsql.exe of every container and NAV version, so the files it opens outside the folders above are not scanned.
+Add-MpPreference -ExclusionProcess 'C:\ProgramData\BcContainerHelper\Extensions\*\Program Files\*\RoleTailored Client\finsql.exe'
+```
+
+If `$bcContainerHelperConfig.hostHelperFolder` is not the default, use that folder instead of
+`C:\ProgramData\BcContainerHelper`. Optionally exclude your repository folder too (for example `C:\Repos`). That is the
+broadest exclusion: nothing cloned there is scanned.
+
+Check the result with `Get-MpPreference | Select-Object ExclusionPath, ExclusionProcess`. On a managed machine (Intune,
+Defender for Endpoint) local exclusions can be ignored. Ask your IT department if exports do not get faster.

@@ -151,6 +151,10 @@ moved. A full export also deletes files of objects that no longer exist. Files i
 once the test objects have been imported into the container; before that they are kept (and listed as `Kept`),
 because they are simply not in the database.
 
+The export runs `finsql.exe` on the host, so Automation variables are named from the host's type libraries
+([why](how-it-works.md#exporting-objects)). Without a saved container state or `finsql.exe` on the host it exports
+inside the container instead, with a warning.
+
 Returns lists of file names: `Added`, `Changed`, `Moved`, `Removed`, `Kept`, `Unchanged`, `Tests`.
 
 ### Invoke-NAVGitCompile
